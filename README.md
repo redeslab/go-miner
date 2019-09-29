@@ -1,0 +1,2 @@
+# go-miner
+miner node 
