@@ -7,15 +7,18 @@ import (
 )
 
 type SetupData struct {
-	Target   string
+	IV       network.Salt
 	MainAddr common.Address
 	SubAddr  account.ID
 }
 
 type SetupReq struct {
-	IV  network.Salt
 	Sig []byte
 	*SetupData
+}
+
+type ProbeReq struct {
+	Target string
 }
 
 func (sr *SetupReq) Verify() bool {
