@@ -25,18 +25,17 @@ func tokenConn() (*ethclient.Client, *generated.Token, error) {
 	return conn, token, err
 }
 
-
-func QueryMyPool(subAddr account.ID) (*eth.MinerData, error){
+func QueryMinerData(subAddr account.ID) (*eth.MinerData, error) {
 	conn, err := connect()
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	md, err := conn.MinerData(nil, subAddr.ToArray())
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
-	
+
 	miner := &eth.MinerData{
 		ID:        md.ID.Int64(),
 		PoolAddr:  md.PoolAddr,
@@ -48,4 +47,3 @@ func QueryMyPool(subAddr account.ID) (*eth.MinerData, error){
 
 	return miner, nil
 }
-

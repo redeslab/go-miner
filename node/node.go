@@ -11,7 +11,9 @@ import (
 	"sync"
 )
 
-const (InitBucketSize = 1 << 22)//4M
+const (
+	InitBucketSize = 1 << 22
+) //4M
 
 var (
 	instance *Node = nil
@@ -40,13 +42,7 @@ func Inst() *Node {
 }
 
 func newNode() *Node {
-
-	w, err := account.LoadWallet(SysConf.WalletPath)
-	if err != nil {
-		panic(err)
-	}
-
-	sa := w.SubAddress()
+	sa := WInst().SubAddress()
 	c, err := net.Listen("tcp", fmt.Sprintf(":%d", sa.ToServerPort()))
 	if err != nil {
 		panic(err)
@@ -59,14 +55,12 @@ func newNode() *Node {
 	return n
 }
 
-func (n *Node) Init(){
+func (n *Node) Init() {
 	//query eth for my pool
 	//connect to pool and keep alive
 	//sync all users under this pool
 	//syncing version of user data
 	//keep same of account between miner and pool
-
-
 }
 
 func (n *Node) Mining() {
@@ -118,22 +112,22 @@ func (n *Node) newWorker(conn net.Conn) {
 	cConn := network.NewCounterConn(aesConn, n)
 
 	pj := &PipeJoiner{
-		client:cConn,
-		server:tgtConn,
+		client: cConn,
+		server: tgtConn,
 	}
 
 	com.NewThread(pj.PullFromServer, func(err interface{}) {
 		_ = cConn.Close()
 	}).Start()
 
-	if _, err := io.Copy(pj.server, pj.client); err != nil{
+	if _, err := io.Copy(pj.server, pj.client); err != nil {
 		tgtConn.Close()
 		return
 	}
 }
 
 func (pj *PipeJoiner) PullFromServer(stopSig chan struct{}) {
-	if _, err:=io.Copy(pj.client, pj.server); err != nil{
+	if _, err := io.Copy(pj.client, pj.server); err != nil {
 		panic(err)
 	}
 }
