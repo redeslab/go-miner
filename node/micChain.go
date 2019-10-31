@@ -6,8 +6,9 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/hyperorchid/go-miner-pool/account"
 	com "github.com/hyperorchid/go-miner-pool/common"
-	"github.com/hyperorchid/go-miner-pool/eth"
+	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"net"
 	"sync"
@@ -20,14 +21,16 @@ var (
 )
 
 type MicChain struct {
-	conn      net.Conn
+	conn      *network.JsonConn
 	database  *leveldb.DB
 	minerData *MinerData
 }
 
 type MinerData struct {
-	*eth.MinerData
-	unSettled int64
+	subAddr      account.ID
+	poolAddr     common.Address
+	PackMined    int64
+	MicroTxNonce int64
 }
 
 func Chain() *MicChain {
@@ -49,8 +52,8 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-
-	md, err := QueryMinerData(WInst().SubAddress())
+	minerID := WInst().SubAddress()
+	md, err := QueryMinerData(minerID)
 	if err != nil {
 		panic(err)
 	}
@@ -58,32 +61,44 @@ func newChain() *MicChain {
 	localMD := &MinerData{}
 	mdKey := minerKey(md.PoolAddr)
 	has, err := db.Has(mdKey, nil)
-
 	if err != nil {
 		panic(err)
 	}
 	if has {
 		_ = com.GetJsonObj(db, minerKey(md.PoolAddr), localMD)
 	} else {
-		localMD = &MinerData{MinerData: md, unSettled: 0}
+		localMD = &MinerData{subAddr: minerID, poolAddr: md.PoolAddr}
 	}
 
 	ip, err := network.BASInst().Query(md.PoolAddr[:])
 	if err != nil {
 		panic(err)
 	}
-	addr := net.JoinHostPort(string(ip), com.DefaultTxBroadPort)
-
+	addr := net.JoinHostPort(string(ip), SysConf.PoolSrvPort)
 	c, err := net.Dial("tcp", addr)
 	if err != nil {
 		panic(err)
 	}
+	conn := &network.JsonConn{Conn: c}
+	reg := &microchain.ReceiptReader{
+		ReaderReg: &microchain.ReaderReg{
+			SubAddr: minerID,
+		},
+	}
+	reg.Sig = WInst().SignJSONSub(reg)
+	if err := conn.Syn(reg); err != nil {
+		panic(err)
+	}
 
 	mc := &MicChain{
-		conn:      c,
+		conn:      conn,
 		database:  db,
 		minerData: localMD,
 	}
+
+	com.NewThread(mc.sync, func(err interface{}) {
+		panic(err)
+	})
 
 	return mc
 }

@@ -91,7 +91,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	jsonConn.WriteAck(nil)
 
 	var aesKey account.PipeCryptKey
-	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), n.wallet.CryptKey()); err != nil {
+	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
 		return
 	}
 	lvConn := network.NewLVConn(conn)
@@ -137,7 +137,4 @@ func (n *Node) ReadCount(no int) {
 }
 
 func (n *Node) WriteCount(no int) {
-	n.bucket.Lock()
-	defer n.bucket.Unlock()
-	n.bucket.counter -= no
 }

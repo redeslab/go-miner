@@ -3,13 +3,16 @@ package node
 import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 )
+
 type Conf struct {
-	DebugMode  bool
-	WalletPath string
-	DBPath     string
+	DebugMode   bool
+	WalletPath  string
+	DBPath      string
+	PoolSrvPort string
 	*com.EthereumConfig
 }
 
 var SysConf = &Conf{
-	EthereumConfig:com.TestNet,
+	EthereumConfig: com.TestNet,
+	PoolSrvPort:    com.ReceiptSyncPort,
 }
