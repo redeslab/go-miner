@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -43,8 +42,6 @@ func init() {
 
 	rootCmd.Flags().StringVarP(&param.password, "password",
 		"p", "", "Password to open pool wallet.")
-	rootCmd.Flags().StringVarP(&node.SysConf.PoolSrvPort, "poolPort",
-		"s", com.ReceiptSyncPort, "Pool's receipt serving port.")
 
 	rootCmd.AddCommand(InitCmd)
 }

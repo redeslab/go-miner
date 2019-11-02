@@ -5,14 +5,12 @@ import (
 )
 
 type Conf struct {
-	DebugMode   bool
-	WalletPath  string
-	DBPath      string
-	PoolSrvPort string
+	DebugMode  bool
+	WalletPath string
+	DBPath     string
 	*com.EthereumConfig
 }
 
 var SysConf = &Conf{
 	EthereumConfig: com.TestNet,
-	PoolSrvPort:    com.ReceiptSyncPort,
 }
