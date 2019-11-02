@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -64,7 +65,16 @@ func mainRun(_ *cobra.Command, _ []string) {
 	}
 
 	n := node.Inst()
-	go n.Mining()
+	com.NewThread(n.Mining, func(err interface{}) {
+		panic(err)
+	}).Start()
+
+	c := node.Chain()
+	c.BM = n
+	com.NewThread(c.Sync, func(err interface{}) {
+		panic(err)
+	}).Start()
+
 	done := make(chan bool, 1)
 	go waitSignal(done)
 	<-done

@@ -25,6 +25,7 @@ type MicChain struct {
 	conn      *network.JsonConn
 	database  *leveldb.DB
 	minerData *MinerData
+	BM        BucketManager
 }
 
 type MinerData struct {
@@ -115,10 +116,6 @@ func newChain() *MicChain {
 		minerData: localMD,
 	}
 
-	com.NewThread(mc.sync, func(err interface{}) {
-		panic(err)
-	})
-
 	return mc
 }
 
@@ -126,9 +123,8 @@ func minerKey(mid account.ID, poolAddr common.Address) []byte {
 	return []byte(fmt.Sprintf(DBKeyMinerData, mid, poolAddr))
 }
 
-func (mc *MicChain) sync(sig chan struct{}) {
+func (mc *MicChain) Sync(sig chan struct{}) {
 	r := &microchain.Receipt{}
-
 	for {
 		if err := mc.conn.ReadJsonMsg(r); err != nil {
 			panic(err)
@@ -139,8 +135,18 @@ func (mc *MicChain) sync(sig chan struct{}) {
 			continue
 		}
 
-		mc.RechargeBucket(r.Amount)
+		if err := mc.BM.RechargeBucket(r); err != nil {
+			log.Warn("recharge err:", err)
+			continue
+		}
 		mc.saveReceipt(r)
+
+		select {
+		case <-sig:
+			log.Info("mic chain sync exit by other")
+			return
+		default:
+		}
 	}
 }
 

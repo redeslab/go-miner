@@ -3,17 +3,15 @@ package node
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/hyperorchid/go-miner-pool/account"
 	com "github.com/hyperorchid/go-miner-pool/common"
+	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"io"
 	"net"
 	"sync"
 )
-
-const (
-	InitBucketSize = 1 << 22
-) //4M
 
 var (
 	instance *Node = nil
@@ -23,10 +21,7 @@ var (
 type Node struct {
 	subAddr account.ID
 	srvConn net.Listener
-}
-
-type userAccount struct {
-	userAddr common.Address
+	user    map[common.Address]*Bucket
 }
 
 type PipeJoiner struct {
@@ -51,6 +46,7 @@ func newNode() *Node {
 	n := &Node{
 		subAddr: sa,
 		srvConn: c,
+		user:    make(map[common.Address]*Bucket),
 	}
 	return n
 }
@@ -63,13 +59,19 @@ func (n *Node) Init() {
 	//keep same of account between miner and pool
 }
 
-func (n *Node) Mining() {
+func (n *Node) Mining(sig chan struct{}) {
 	for {
 		conn, err := n.srvConn.Accept()
 		if err != nil {
 			panic(err)
 		}
 		go n.newWorker(conn)
+		select {
+		case <-sig:
+			log.Info("mining exit by other")
+			return
+		default:
+		}
 	}
 }
 
@@ -109,7 +111,10 @@ func (n *Node) newWorker(conn net.Conn) {
 	if err != nil {
 		return
 	}
-	cConn := network.NewCounterConn(aesConn, n)
+
+	b := NewBucket()
+	n.user[req.MainAddr] = b
+	cConn := network.NewCounterConn(aesConn, b)
 
 	pj := &PipeJoiner{
 		client: cConn,
@@ -132,9 +137,11 @@ func (pj *PipeJoiner) PullFromServer(stopSig chan struct{}) {
 	}
 }
 
-func (n *Node) ReadCount(no int) {
-	//TODO:: we just count the out put data
-}
-
-func (n *Node) WriteCount(no int) {
+func (n *Node) RechargeBucket(r *microchain.Receipt) error {
+	b, ok := n.user[r.From]
+	if !ok {
+		return fmt.Errorf("no such user[%s] right now", r.From)
+	}
+	b.Recharge(int(r.Amount))
+	return nil
 }
