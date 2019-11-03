@@ -27,8 +27,8 @@ func NewBucket() *Bucket {
 	}
 }
 
+//Tips:: we just count the out put data
 func (b *Bucket) ReadCount(no int) error {
-	//TODO:: we just count the out put data
 	return nil
 }
 

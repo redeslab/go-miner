@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	com "github.com/hyperorchid/go-miner-pool/common"
+	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -44,6 +45,9 @@ func init() {
 	rootCmd.Flags().StringVarP(&param.password, "password",
 		"p", "", "Password to open pool wallet.")
 
+	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "bas",
+		"b", "8.8.8.8", "blockChain address service")
+
 	rootCmd.AddCommand(InitCmd)
 }
 
@@ -59,12 +63,13 @@ func mainRun(_ *cobra.Command, _ []string) {
 	base := BaseDir()
 	node.SysConf.WalletPath = WalletDir(base)
 	node.SysConf.DBPath = DBPath(base)
+	network.BASInst().SetBAS(node.SysConf.BAS)
 
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)
 	}
 
-	n := node.Inst()
+	n := node.SrvNode()
 	com.NewThread(n.Mining, func(err interface{}) {
 		panic(err)
 	}).Start()
@@ -95,7 +100,7 @@ func waitSignal(done chan bool) {
 
 	sig := <-sigCh
 
-	node.Inst().Stop()
+	node.SrvNode().Stop()
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true

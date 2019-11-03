@@ -29,7 +29,7 @@ type PipeJoiner struct {
 	server net.Conn
 }
 
-func Inst() *Node {
+func SrvNode() *Node {
 	once.Do(func() {
 		instance = newNode()
 	})
