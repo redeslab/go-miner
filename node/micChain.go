@@ -22,10 +22,10 @@ var (
 )
 
 type MicChain struct {
-	conn      *network.JsonConn
-	database  *leveldb.DB
-	minerData *MinerData
-	BM        BucketManager
+	conn          *network.JsonConn
+	database      *leveldb.DB
+	minerData     *MinerData
+	BucketManager BucketManager
 }
 
 type MinerData struct {
@@ -135,7 +135,7 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 			continue
 		}
 
-		if err := mc.BM.RechargeBucket(r); err != nil {
+		if err := mc.BucketManager.RechargeBucket(r); err != nil {
 			log.Warn("recharge err:", err)
 			continue
 		}

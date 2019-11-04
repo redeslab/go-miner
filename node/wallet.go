@@ -15,7 +15,7 @@ type MinerWallet struct {
 }
 
 func WInst() *MinerWallet {
-	once.Do(func() {
+	wOnce.Do(func() {
 		wInstance = loadWallet()
 	})
 	return wInstance

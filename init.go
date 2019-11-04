@@ -27,14 +27,18 @@ func initMiner(_ *cobra.Command, _ []string) {
 		fmt.Println("Duplicate init operation")
 		return
 	}
+	if len(param.password) == 0 {
+		pwd, err := common.ReadPassWord2()
+		if err != nil {
+			panic(err)
+		}
+		param.password = pwd
+	}
 
 	if err := os.Mkdir(baseDir, os.ModePerm); err != nil {
 		panic(err)
 	}
 
-	if len(param.password) == 0 {
-		panic("use -p to input a password")
-	}
 	w, err := account.NewWallet(param.password)
 	if err != nil {
 		panic(err)

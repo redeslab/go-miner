@@ -14,5 +14,5 @@ type Conf struct {
 
 var SysConf = &Conf{
 	EthereumConfig: com.TestNet,
-	BAS:            "8.8.8.8",
+	BAS:            "149.28.203.172",
 }

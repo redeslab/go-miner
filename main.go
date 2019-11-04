@@ -5,7 +5,10 @@ import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
+	"github.com/hyperorchidlab/BAS/dbSrv"
+	"github.com/pangolink/miner-pool/common"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -14,7 +17,7 @@ import (
 )
 
 const (
-	DefaultBaseDir = ".miner"
+	DefaultBaseDir = ".hop"
 	WalletFile     = "wallet.json"
 	DataBase       = "Receipts"
 )
@@ -22,12 +25,21 @@ const (
 var param struct {
 	version  bool
 	password string
+	minerIP  string
+	basIP    string
+}
+
+var BasCmd = &cobra.Command{
+	Use:   "bas",
+	Short: "register self to block chain service",
+	Long:  `TODO::.`,
+	Run:   basReg,
 }
 
 var rootCmd = &cobra.Command{
-	Use: "miner",
+	Use: "HOP",
 
-	Short: "miner",
+	Short: "HOP",
 
 	Long: `usage description`,
 
@@ -37,22 +49,33 @@ var rootCmd = &cobra.Command{
 func init() {
 
 	rootCmd.Flags().BoolVarP(&param.version, "version",
-		"v", false, "show current version")
+		"v", false, "HOP -v")
 
 	rootCmd.Flags().BoolVarP(&node.SysConf.DebugMode, "debug",
-		"d", false, "run in debug model")
+		"d", false, "HOP -d")
 
 	rootCmd.Flags().StringVarP(&param.password, "password",
-		"p", "", "Password to open pool wallet.")
+		"p", "", "HOP -p [PASSWORD]")
 
-	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "bas",
-		"b", "8.8.8.8", "blockChain address service")
+	//TODO:: mv to config file
+	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
+		"b", "149.28.203.172", "HOP -b [BAS IP]")
+
+	BasCmd.Flags().StringVarP(&param.minerIP, "minerIP",
+		"n", "", "HOP bas -n [MY IP Address]")
+
+	BasCmd.Flags().StringVarP(&param.password, "password",
+		"p", "", "HOP bas -p [PASSWORD]")
+
+	BasCmd.Flags().StringVarP(&param.basIP, "baseIP",
+		"b", "", "HOP bas -b [BAS IP]]")
 
 	rootCmd.AddCommand(InitCmd)
+
+	rootCmd.AddCommand(BasCmd)
 }
 
 func main() {
-
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -61,9 +84,24 @@ func main() {
 
 func mainRun(_ *cobra.Command, _ []string) {
 	base := BaseDir()
+
+	if _, ok := common.FileExists(base); !ok {
+		fmt.Println("Init node first, please!' HOP init -p [PASSWORD]'")
+		return
+	}
+
 	node.SysConf.WalletPath = WalletDir(base)
 	node.SysConf.DBPath = DBPath(base)
-	network.BASInst().SetBAS(node.SysConf.BAS)
+	network.BASInst().SetServerIP(node.SysConf.BAS)
+	if param.password == "" {
+		fmt.Println("Password=>")
+
+		pw, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			panic(err)
+		}
+		param.password = string(pw)
+	}
 
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)
@@ -75,7 +113,7 @@ func mainRun(_ *cobra.Command, _ []string) {
 	}).Start()
 
 	c := node.Chain()
-	c.BM = n
+	c.BucketManager = n
 	com.NewThread(c.Sync, func(err interface{}) {
 		panic(err)
 	}).Start()
@@ -104,4 +142,31 @@ func waitSignal(done chan bool) {
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true
+}
+
+func basReg(_ *cobra.Command, _ []string) {
+	if err := node.WInst().Open(param.password); err != nil {
+		panic(err)
+	}
+
+	t, b, e := dbSrv.ConvertIP(param.minerIP)
+	if e != nil {
+		panic(e)
+	}
+
+	myAddr := node.WInst().SubAddress().ToArray()
+	req := &dbSrv.RegRequest{
+		BlockAddr: myAddr[:],
+		NetworkAddr: &dbSrv.NetworkAddr{
+			NTyp:    t,
+			NetAddr: b,
+			BTyp:    dbSrv.BTEd25519,
+		},
+	}
+
+	req.Sig = node.WInst().SignJSONSub(req.NetworkAddr)
+	if err := network.BASInst().RegisterWithSrv(req, param.basIP); err != nil {
+		panic(err)
+	}
+	fmt.Println("reg success!")
 }
