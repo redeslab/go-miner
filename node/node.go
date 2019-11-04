@@ -111,6 +111,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	if err != nil {
 		return
 	}
+	jsonConn.WriteAck(nil)
 
 	b := NewBucket()
 	n.user[req.MainAddr] = b

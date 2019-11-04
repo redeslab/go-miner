@@ -7,8 +7,11 @@ import (
 )
 
 const (
-	InitBucketSize = 1 << 22
-) //4M
+	InitBucketSize     = 1 << 24 //16M
+	RechargePieceSize  = 1 << 22 //4M
+	MaxLostRechargeReq = 4
+)
+
 var (
 	ErrNoPacketBalance = fmt.Errorf("need to recharge for this mienr")
 )
