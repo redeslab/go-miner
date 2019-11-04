@@ -62,12 +62,12 @@ func init() {
 		"b", "149.28.203.172", "HOP -b [BAS IP]")
 
 	BasCmd.Flags().StringVarP(&param.minerIP, "minerIP",
-		"n", "", "HOP bas -n [MY IP Address]")
+		"m", "", "HOP bas -m [MY IP Address]")
 
 	BasCmd.Flags().StringVarP(&param.password, "password",
 		"p", "", "HOP bas -p [PASSWORD]")
 
-	BasCmd.Flags().StringVarP(&param.basIP, "baseIP",
+	BasCmd.Flags().StringVarP(&param.basIP, "basIP",
 		"b", "", "HOP bas -b [BAS IP]]")
 
 	rootCmd.AddCommand(InitCmd)
@@ -145,6 +145,9 @@ func waitSignal(done chan bool) {
 }
 
 func basReg(_ *cobra.Command, _ []string) {
+
+	node.SysConf.WalletPath = WalletDir(BaseDir())
+
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)
 	}
@@ -154,9 +157,10 @@ func basReg(_ *cobra.Command, _ []string) {
 		panic(e)
 	}
 
-	myAddr := node.WInst().SubAddress().ToArray()
+	myAddr := node.WInst().SubAddress()
+	fmt.Println(myAddr, len(myAddr))
 	req := &dbSrv.RegRequest{
-		BlockAddr: myAddr[:],
+		BlockAddr: []byte(myAddr),
 		NetworkAddr: &dbSrv.NetworkAddr{
 			NTyp:    t,
 			NetAddr: b,
