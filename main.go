@@ -152,7 +152,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		panic(err)
 	}
 
-	t, b, e := dbSrv.ConvertIP(param.minerIP)
+	t, e := dbSrv.CheckIPType(param.minerIP)
 	if e != nil {
 		panic(e)
 	}
@@ -163,7 +163,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		BlockAddr: []byte(myAddr),
 		NetworkAddr: &dbSrv.NetworkAddr{
 			NTyp:    t,
-			NetAddr: b,
+			NetAddr: []byte(param.minerIP),
 			BTyp:    dbSrv.BTEd25519,
 		},
 	}
