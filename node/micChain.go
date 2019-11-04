@@ -72,11 +72,11 @@ func newChain() *MicChain {
 		localMD = &MinerData{subAddr: minerID, poolAddr: md.PoolAddr}
 	}
 
-	ip, err := network.BASInst().Query(md.PoolAddr[:])
+	ntAddr, err := network.BASInst().Query(md.PoolAddr[:])
 	if err != nil {
 		panic(err)
 	}
-	addr := net.JoinHostPort(string(ip), com.ReceiptSyncPort)
+	addr := net.JoinHostPort(string(ntAddr.NetAddr), com.ReceiptSyncPort)
 	c, err := net.Dial("tcp", addr)
 	if err != nil {
 		panic(err)
