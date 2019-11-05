@@ -6,7 +6,6 @@ import (
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/hyperorchidlab/BAS/dbSrv"
-	"github.com/pangolink/miner-pool/common"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
@@ -68,7 +67,7 @@ func init() {
 		"p", "", "HOP bas -p [PASSWORD]")
 
 	BasCmd.Flags().StringVarP(&param.basIP, "basIP",
-		"b", "", "HOP bas -b [BAS IP]]")
+		"b", "149.28.203.172", "HOP bas -b [BAS IP]]")
 
 	rootCmd.AddCommand(InitCmd)
 
@@ -85,7 +84,7 @@ func main() {
 func mainRun(_ *cobra.Command, _ []string) {
 	base := BaseDir()
 
-	if _, ok := common.FileExists(base); !ok {
+	if _, ok := com.FileExists(base); !ok {
 		fmt.Println("Init node first, please!' HOP init -p [PASSWORD]'")
 		return
 	}
