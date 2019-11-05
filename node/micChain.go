@@ -72,7 +72,7 @@ func newChain() *MicChain {
 		localMD = &MinerData{subAddr: minerID, poolAddr: md.PoolAddr}
 	}
 
-	ntAddr, err := network.BASInst().Query(md.PoolAddr[:])
+	ntAddr, err := network.BASInst().Query(md.PoolAddr.Bytes())
 	if err != nil {
 		panic(err)
 	}
