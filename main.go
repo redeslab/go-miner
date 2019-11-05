@@ -5,7 +5,6 @@ import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
-	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
@@ -26,13 +25,6 @@ var param struct {
 	password string
 	minerIP  string
 	basIP    string
-}
-
-var BasCmd = &cobra.Command{
-	Use:   "bas",
-	Short: "register self to block chain service",
-	Long:  `TODO::.`,
-	Run:   basReg,
 }
 
 var rootCmd = &cobra.Command{
@@ -60,18 +52,10 @@ func init() {
 	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
 		"b", "149.28.203.172", "HOP -b [BAS IP]")
 
-	BasCmd.Flags().StringVarP(&param.minerIP, "minerIP",
-		"m", "", "HOP bas -m [MY IP Address]")
-
-	BasCmd.Flags().StringVarP(&param.password, "password",
-		"p", "", "HOP bas -p [PASSWORD]")
-
-	BasCmd.Flags().StringVarP(&param.basIP, "basIP",
-		"b", "149.28.203.172", "HOP bas -b [BAS IP]]")
-
 	rootCmd.AddCommand(InitCmd)
-
 	rootCmd.AddCommand(BasCmd)
+	rootCmd.AddCommand(ShowCmd)
+	ShowCmd.AddCommand(ShowAddrCmd)
 }
 
 func main() {
@@ -141,35 +125,4 @@ func waitSignal(done chan bool) {
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true
-}
-
-func basReg(_ *cobra.Command, _ []string) {
-
-	node.SysConf.WalletPath = WalletDir(BaseDir())
-
-	if err := node.WInst().Open(param.password); err != nil {
-		panic(err)
-	}
-
-	t, e := dbSrv.CheckIPType(param.minerIP)
-	if e != nil {
-		panic(e)
-	}
-
-	myAddr := node.WInst().SubAddress()
-	fmt.Println(myAddr, len(myAddr))
-	req := &dbSrv.RegRequest{
-		BlockAddr: []byte(myAddr),
-		NetworkAddr: &dbSrv.NetworkAddr{
-			NTyp:    t,
-			NetAddr: []byte(param.minerIP),
-			BTyp:    dbSrv.BTEd25519,
-		},
-	}
-
-	req.Sig = node.WInst().SignJSONSub(req.NetworkAddr)
-	if err := network.BASInst().RegisterWithSrv(req, param.basIP); err != nil {
-		panic(err)
-	}
-	fmt.Println("reg success!")
 }
