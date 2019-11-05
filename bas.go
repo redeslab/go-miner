@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
+	"github.com/hyperorchidlab/BAS/crypto"
 	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +47,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		NetworkAddr: &dbSrv.NetworkAddr{
 			NTyp:    t,
 			NetAddr: []byte(param.minerIP),
-			BTyp:    dbSrv.BTEd25519,
+			BTyp:    crypto.BTEd25519,
 		},
 	}
 
