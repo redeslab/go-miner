@@ -50,7 +50,7 @@ func init() {
 
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
-		"b", "149.28.203.172", "HOP -b [BAS IP]")
+		"b", "167.179.112.108", "HOP -b [BAS IP]")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
