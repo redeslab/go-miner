@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/hyperorchid/go-miner-pool/account"
 	"github.com/spf13/cobra"
 )
@@ -26,4 +27,6 @@ func showAddr(_ *cobra.Command, _ []string) {
 		fmt.Println(err)
 	}
 	fmt.Println(w.SubAddress().String())
+	fmt.Println(hexutil.Encode(w.SubAddress().ToPubKey()))
+
 }
