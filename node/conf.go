@@ -19,5 +19,5 @@ var SysConf = &Conf{
 		MicroPaySys: "0x95048537a137ac8bf4d612824e0f74fbae34542a",
 		Token:       "0x19e55b69597e4ad2e99a422af70206cc453c3561",
 	},
-	BAS: "149.28.203.172",
+	BAS: "167.179.112.108",
 }

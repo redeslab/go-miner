@@ -11,6 +11,7 @@ import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
+	basc "github.com/hyperorchidlab/BAS/client"
 	"net"
 	"sync"
 )
@@ -72,7 +73,7 @@ func newChain() *MicChain {
 		localMD = &MinerData{subAddr: minerID, poolAddr: md.PoolAddr}
 	}
 
-	ntAddr, err := network.BASInst().Query(md.PoolAddr.Bytes())
+	ntAddr, err := basc.QueryBySrvIP(md.PoolAddr.Bytes(), SysConf.BAS)
 	if err != nil {
 		panic(err)
 	}

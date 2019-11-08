@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	com "github.com/hyperorchid/go-miner-pool/common"
-	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -75,7 +74,6 @@ func mainRun(_ *cobra.Command, _ []string) {
 
 	node.SysConf.WalletPath = WalletDir(base)
 	node.SysConf.DBPath = DBPath(base)
-	network.BASInst().SetServerIP(node.SysConf.BAS)
 	if param.password == "" {
 		fmt.Println("Password=>")
 

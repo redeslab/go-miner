@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/hyperorchid/go-miner/node"
+	basc "github.com/hyperorchidlab/BAS/client"
 	"github.com/hyperorchidlab/BAS/crypto"
 	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/spf13/cobra"
@@ -52,7 +52,7 @@ func basReg(_ *cobra.Command, _ []string) {
 	}
 
 	req.Sig = node.WInst().SignJSONSub(req.NetworkAddr)
-	if err := network.BASInst().RegisterWithSrv(req, param.basIP); err != nil {
+	if err := basc.RegisterBySrvIP(req, param.basIP); err != nil {
 		panic(err)
 	}
 	fmt.Println("reg success!")
