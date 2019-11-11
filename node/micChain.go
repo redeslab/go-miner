@@ -12,6 +12,7 @@ import (
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	basc "github.com/hyperorchidlab/BAS/client"
+	"math/big"
 	"net"
 	"sync"
 )
@@ -32,7 +33,7 @@ type MicChain struct {
 type MinerData struct {
 	subAddr      account.ID
 	poolAddr     common.Address
-	PackMined    int64
+	PackMined    *big.Int
 	LastMicNonce int64
 }
 
@@ -154,6 +155,6 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
 	_ = com.SaveJsonObj(mc.database, r.RKey(), r)
 	mc.minerData.LastMicNonce = r.Nonce
-	mc.minerData.PackMined += r.Amount
+	mc.minerData.PackMined = mc.minerData.PackMined.Add(mc.minerData.PackMined, r.Amount)
 	_ = com.SaveJsonObj(mc.database, minerKey(r.Miner, r.To), mc.minerData)
 }

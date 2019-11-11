@@ -1,7 +1,6 @@
 package node
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/hyperorchid/go-miner-pool/account"
 	"github.com/hyperorchid/go-miner-pool/eth"
@@ -13,7 +12,7 @@ func connect() (*generated.MicroPaySystem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return generated.NewMicroPaySystem(common.HexToAddress(SysConf.MicroPaySys), conn)
+	return generated.NewMicroPaySystem(SysConf.MicroPaySys, conn)
 }
 
 func tokenConn() (*ethclient.Client, *generated.Token, error) {
@@ -21,7 +20,7 @@ func tokenConn() (*ethclient.Client, *generated.Token, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	token, err := generated.NewToken(common.HexToAddress(SysConf.Token), conn)
+	token, err := generated.NewToken(SysConf.Token, conn)
 	return conn, token, err
 }
 
@@ -41,7 +40,7 @@ func QueryMinerData(subAddr account.ID) (*eth.MinerData, error) {
 		PoolAddr:  md.PoolAddr,
 		PayerAddr: md.Payer,
 		SubAddr:   account.ConvertToID2(md.SubAddr[:]),
-		GTN:       md.GuaranteedTokenNo.Int64(),
+		GTN:       md.GuaranteedTokenNo,
 		Zone:      string(md.Zone[:]),
 	}
 

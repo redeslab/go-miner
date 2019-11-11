@@ -143,6 +143,6 @@ func (n *Node) RechargeBucket(r *microchain.Receipt) error {
 	if !ok {
 		return fmt.Errorf("no such user[%s] right now", r.From)
 	}
-	b.Recharge(int(r.Amount))
+	b.Recharge(int(r.Amount.Int64()))
 	return nil
 }
