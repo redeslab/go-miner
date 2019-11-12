@@ -153,7 +153,7 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 }
 
 func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
-	_ = com.SaveJsonObj(mc.database, r.RKey(), r)
+	_ = com.SaveJsonObj(mc.database, r.RKey(SysConf.MicroPaySys), r)
 	mc.minerData.LastMicNonce = r.Nonce
 	mc.minerData.PackMined = mc.minerData.PackMined.Add(mc.minerData.PackMined, r.Amount)
 	_ = com.SaveJsonObj(mc.database, minerKey(r.Miner, r.To), mc.minerData)

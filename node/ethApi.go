@@ -40,7 +40,7 @@ func QueryMinerData(subAddr account.ID) (*eth.MinerData, error) {
 		PoolAddr:  md.PoolAddr,
 		PayerAddr: md.Payer,
 		SubAddr:   account.ConvertToID2(md.SubAddr[:]),
-		GTN:       md.GuaranteedTokenNo,
+		GTN:       md.GTN,
 		Zone:      string(md.Zone[:]),
 	}
 
