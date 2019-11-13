@@ -64,7 +64,10 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-
+	if minerID != md.SubAddr {
+		chainLog.Notice(md.String())
+		panic("It's not my data")
+	}
 	chainLog.Notice("Sync miner data:", md.String())
 
 	localMD := &MinerData{}
