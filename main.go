@@ -5,7 +5,6 @@ import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -21,13 +20,10 @@ var param struct {
 }
 
 var rootCmd = &cobra.Command{
-	Use: "HOP",
-
+	Use:   "HOP",
 	Short: "HOP",
-
-	Long: `usage description`,
-
-	Run: mainRun,
+	Long:  `usage description`,
+	Run:   mainRun,
 }
 
 func init() {
@@ -59,29 +55,8 @@ func main() {
 }
 
 func mainRun(_ *cobra.Command, _ []string) {
-	base := node.BaseDir()
-	if _, ok := com.FileExists(base); !ok {
-		fmt.Println("Init node first, please!' HOP init -p [PASSWORD]'")
-		return
-	}
 
-	node.SysConf.InitPath(base)
-
-	if param.password == "" {
-		fmt.Println("Password=>")
-
-		pw, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-		if err != nil {
-			panic(err)
-		}
-		param.password = string(pw)
-	}
-
-	if err := node.WInst().Open(param.password); err != nil {
-		panic(err)
-	}
-
-	com.InitLog(node.SysConf.LogPath)
+	node.InitMinerNode(param.password)
 
 	n := node.SrvNode()
 	com.NewThread(n.Mining, func(err interface{}) {

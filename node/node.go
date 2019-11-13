@@ -59,7 +59,11 @@ func (n *Node) Mining(sig chan struct{}) {
 		if err != nil {
 			panic(err)
 		}
-		go n.newWorker(conn)
+		com.NewThread(func(sig chan struct{}) {
+			n.newWorker(conn)
+		}, func(err interface{}) {
+			conn.Close()
+		}).Start()
 		select {
 		case <-sig:
 			log.Info("mining exit by other")
@@ -70,11 +74,10 @@ func (n *Node) Mining(sig chan struct{}) {
 }
 
 func (n *Node) Stop() {
+	_ = n.srvConn.Close()
 }
 
 func (n *Node) newWorker(conn net.Conn) {
-	defer conn.Close()
-
 	jsonConn := &network.JsonConn{Conn: conn}
 	req := &SetupReq{}
 	if err := jsonConn.ReadJsonMsg(req); err != nil {

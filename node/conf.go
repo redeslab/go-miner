@@ -1,8 +1,11 @@
 package node
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	com "github.com/hyperorchid/go-miner-pool/common"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 	"os/user"
 	"path/filepath"
 )
@@ -54,4 +57,29 @@ func (c *Conf) InitPath(base string) {
 	c.DBPath = filepath.Join(base, string(filepath.Separator), DataBase)
 	c.LogPath = filepath.Join(base, string(filepath.Separator), LogFile)
 	c.PidPath = filepath.Join(base, string(filepath.Separator), PidFile)
+}
+
+func InitMinerNode(auth string) {
+
+	base := BaseDir()
+	if _, ok := com.FileExists(base); !ok {
+		panic("Init node first, please!' HOP init -p [PASSWORD]'")
+		return
+	}
+	SysConf.InitPath(base)
+
+	if auth == "" {
+		fmt.Println("Password=>")
+		pw, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			panic(err)
+		}
+		auth = string(pw)
+	}
+
+	if err := WInst().Open(auth); err != nil {
+		panic(err)
+	}
+
+	com.InitLog(SysConf.LogPath)
 }
