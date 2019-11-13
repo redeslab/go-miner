@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/hyperorchid/go-miner-pool/account"
+	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ var ShowAddrCmd = &cobra.Command{
 }
 
 func showAddr(_ *cobra.Command, _ []string) {
-	w, err := account.LoadWallet(WalletDir(BaseDir()))
+	w, err := account.LoadWallet(node.WalletDir(node.BaseDir()))
 	if err != nil {
 		fmt.Println(err)
 	}

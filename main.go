@@ -13,13 +13,6 @@ import (
 	"syscall"
 )
 
-const (
-	DefaultBaseDir = ".hop"
-	WalletFile     = "wallet.json"
-	DataBase       = "Receipts"
-	LogFile        = "hop.log"
-)
-
 var param struct {
 	version  bool
 	password string
@@ -66,16 +59,13 @@ func main() {
 }
 
 func mainRun(_ *cobra.Command, _ []string) {
-	base := BaseDir()
-
+	base := node.BaseDir()
 	if _, ok := com.FileExists(base); !ok {
 		fmt.Println("Init node first, please!' HOP init -p [PASSWORD]'")
 		return
 	}
 
-	node.SysConf.WalletPath = WalletDir(base)
-	node.SysConf.DBPath = DBPath(base)
-	node.SysConf.LogPath = LogPath(base)
+	node.SysConf.InitPath(base)
 
 	if param.password == "" {
 		fmt.Println("Password=>")
@@ -112,7 +102,7 @@ func mainRun(_ *cobra.Command, _ []string) {
 func waitSignal(done chan bool) {
 	pid := strconv.Itoa(os.Getpid())
 	fmt.Printf("\n>>>>>>>>>>miner start at pid(%s)<<<<<<<<<<\n", pid)
-	if err := ioutil.WriteFile(".pid", []byte(pid), 0644); err != nil {
+	if err := ioutil.WriteFile(node.SysConf.PidPath, []byte(pid), 0644); err != nil {
 		fmt.Print("failed to write running pid", err)
 	}
 

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"github.com/hyperorchid/go-miner-pool/account"
 	"github.com/hyperorchid/go-miner-pool/common"
+	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
 	"os"
-	"os/user"
-	"path/filepath"
 )
 
 var InitCmd = &cobra.Command{
@@ -22,7 +21,7 @@ func init() {
 }
 func initMiner(_ *cobra.Command, _ []string) {
 
-	baseDir := BaseDir()
+	baseDir := node.BaseDir()
 	if _, ok := common.FileExists(baseDir); ok {
 		fmt.Println("Duplicate init operation")
 		return
@@ -44,28 +43,8 @@ func initMiner(_ *cobra.Command, _ []string) {
 		panic(err)
 	}
 
-	if err := w.SaveToPath(WalletDir(baseDir)); err != nil {
+	if err := w.SaveToPath(node.WalletDir(baseDir)); err != nil {
 		panic(err)
 	}
 	fmt.Println("Create wallet success!")
-}
-
-func BaseDir() string {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	baseDir := filepath.Join(usr.HomeDir, string(filepath.Separator), DefaultBaseDir)
-	return baseDir
-}
-
-func WalletDir(base string) string {
-	return filepath.Join(base, string(filepath.Separator), WalletFile)
-}
-func DBPath(base string) string {
-	return filepath.Join(base, string(filepath.Separator), DataBase)
-}
-
-func LogPath(base string) string {
-	return filepath.Join(base, string(filepath.Separator), LogFile)
 }
