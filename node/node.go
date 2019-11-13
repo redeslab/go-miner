@@ -8,14 +8,16 @@ import (
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
+	"github.com/op/go-logging"
 	"io"
 	"net"
 	"sync"
 )
 
 var (
-	instance *Node = nil
-	once     sync.Once
+	instance   *Node = nil
+	once       sync.Once
+	nodeLog, _ = logging.GetLogger("node")
 )
 
 type Node struct {
@@ -49,14 +51,6 @@ func newNode() *Node {
 		user:    make(map[common.Address]*Bucket),
 	}
 	return n
-}
-
-func (n *Node) Init() {
-	//query eth for my pool
-	//connect to pool and keep alive
-	//sync all users under this pool
-	//syncing version of user data
-	//keep same of account between miner and pool
 }
 
 func (n *Node) Mining(sig chan struct{}) {

@@ -26,6 +26,7 @@ func showAddr(_ *cobra.Command, _ []string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println(w.MainAddress().String())
 	fmt.Println(w.SubAddress().String())
 	fmt.Println(hexutil.Encode(w.SubAddress().ToPubKey()))
 

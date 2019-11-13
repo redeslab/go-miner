@@ -17,6 +17,7 @@ const (
 	DefaultBaseDir = ".hop"
 	WalletFile     = "wallet.json"
 	DataBase       = "Receipts"
+	LogFile        = "hop.log"
 )
 
 var param struct {
@@ -39,17 +40,17 @@ var rootCmd = &cobra.Command{
 func init() {
 
 	rootCmd.Flags().BoolVarP(&param.version, "version",
-		"v", false, "HOP -v")
+		"v", false, "HOP version")
 
 	rootCmd.Flags().BoolVarP(&node.SysConf.DebugMode, "debug",
-		"d", false, "HOP -d")
+		"d", false, "Debug Mode")
 
 	rootCmd.Flags().StringVarP(&param.password, "password",
-		"p", "", "HOP -p [PASSWORD]")
+		"p", "", "Password to unlock miner")
 
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
-		"b", "167.179.112.108", "HOP -b [BAS IP]")
+		"b", "167.179.112.108", "Bas IP")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
@@ -74,6 +75,8 @@ func mainRun(_ *cobra.Command, _ []string) {
 
 	node.SysConf.WalletPath = WalletDir(base)
 	node.SysConf.DBPath = DBPath(base)
+	node.SysConf.LogPath = LogPath(base)
+
 	if param.password == "" {
 		fmt.Println("Password=>")
 
@@ -87,6 +90,8 @@ func mainRun(_ *cobra.Command, _ []string) {
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)
 	}
+
+	com.InitLog(node.SysConf.LogPath)
 
 	n := node.SrvNode()
 	com.NewThread(n.Mining, func(err interface{}) {

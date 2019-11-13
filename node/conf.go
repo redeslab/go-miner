@@ -9,10 +9,12 @@ type Conf struct {
 	DebugMode  bool
 	WalletPath string
 	DBPath     string
+	LogPath    string
 	BAS        string
 	*com.EthereumConfig
 }
 
+//TODO::
 var SysConf = &Conf{
 	EthereumConfig: &com.EthereumConfig{
 		NetworkID:   com.RopstenNetworkId,

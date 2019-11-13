@@ -65,3 +65,7 @@ func WalletDir(base string) string {
 func DBPath(base string) string {
 	return filepath.Join(base, string(filepath.Separator), DataBase)
 }
+
+func LogPath(base string) string {
+	return filepath.Join(base, string(filepath.Separator), LogFile)
+}
