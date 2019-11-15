@@ -1,6 +1,7 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -23,6 +24,7 @@ var (
 type Node struct {
 	subAddr account.ID
 	srvConn net.Listener
+	pingSrv *net.UDPConn
 	user    map[common.Address]*Bucket
 }
 
@@ -44,13 +46,38 @@ func newNode() *Node {
 	if err != nil {
 		panic(err)
 	}
+	p, err := net.ListenUDP("udp", &net.UDPAddr{Port: int(sa.ToServerPort())})
+	if err != nil {
+		panic(err)
+	}
 
 	n := &Node{
 		subAddr: sa,
 		srvConn: c,
+		pingSrv: p,
 		user:    make(map[common.Address]*Bucket),
 	}
+
+	com.NewThreadWithID("[UDP Test Thread]", n.TestService, func(err interface{}) {
+		panic(err)
+	}).Start()
 	return n
+}
+
+func (n *Node) TestService(sig chan struct{}) {
+	buffer := make([]byte, 1024)
+	for {
+		_, a, e := n.pingSrv.ReadFromUDP(buffer)
+		if e != nil {
+			log.Warn("Test Ping:", e)
+			continue
+		}
+		data, _ := json.Marshal(network.ACK{
+			Success: true,
+			Message: "",
+		})
+		_, _ = n.pingSrv.WriteToUDP(data, a)
+	}
 }
 
 func (n *Node) Mining(sig chan struct{}) {

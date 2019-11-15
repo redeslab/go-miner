@@ -81,6 +81,7 @@ func newChain() *MicChain {
 
 	ntAddr, err := basc.QueryBySrvIP(md.PoolAddr.Bytes(), SysConf.BAS)
 	if err != nil {
+		fmt.Println(md.String())
 		panic(err)
 	}
 	addr := net.JoinHostPort(string(ntAddr.NetAddr), com.ReceiptSyncPort)

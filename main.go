@@ -59,13 +59,13 @@ func mainRun(_ *cobra.Command, _ []string) {
 	node.InitMinerNode(param.password)
 
 	n := node.SrvNode()
-	com.NewThread(n.Mining, func(err interface{}) {
+	com.NewThreadWithID("[TCP Service Thread]", n.Mining, func(err interface{}) {
 		panic(err)
 	}).Start()
 
 	c := node.Chain()
 	c.BucketManager = n
-	com.NewThread(c.Sync, func(err interface{}) {
+	com.NewThreadWithID("[Micro Chain Sync Thread]", c.Sync, func(err interface{}) {
 		panic(err)
 	}).Start()
 

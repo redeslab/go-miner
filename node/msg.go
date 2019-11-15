@@ -24,3 +24,7 @@ type ProbeReq struct {
 func (sr *SetupReq) Verify() bool {
 	return account.VerifyJsonSig(sr.MainAddr, sr.Sig, sr.SetupData)
 }
+
+type PingTest struct {
+	PayLoad string
+}
