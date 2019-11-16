@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperorchid/go-miner-pool/account"
 	"github.com/hyperorchid/go-miner-pool/network"
@@ -23,6 +24,19 @@ type ProbeReq struct {
 
 func (sr *SetupReq) Verify() bool {
 	return account.VerifyJsonSig(sr.MainAddr, sr.Sig, sr.SetupData)
+}
+
+func (sr *SetupReq) String() string {
+	return fmt.Sprintf("\n@@@@@@@@@@@@@@@@@@@[Setup Request]@@@@@@@@@@@@@@@@@"+
+		"\nSig:\t%s"+
+		"\nIV:\t%s"+
+		"\nMainAddr:\t%s"+
+		"\nSubAddr:\t%s"+
+		"\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+		string(sr.Sig),
+		string(sr.IV[:]),
+		sr.MainAddr.String(),
+		sr.SubAddr.String())
 }
 
 type PingTest struct {

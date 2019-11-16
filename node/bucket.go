@@ -39,6 +39,7 @@ func (b *Bucket) WriteCount(no int) error {
 	b.Lock()
 	defer b.Unlock()
 	b.token -= no
+	nodeLog.Debug("bucket used", no, " last:", b.token)
 	if b.token <= 0 {
 		return ErrNoPacketBalance
 	}
@@ -49,4 +50,5 @@ func (b *Bucket) Recharge(no int) {
 	b.Lock()
 	defer b.Unlock()
 	b.token += no
+	nodeLog.Notice("bucket recharged", no, " now:", b.token)
 }

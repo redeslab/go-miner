@@ -28,11 +28,6 @@ type Node struct {
 	user    map[common.Address]*Bucket
 }
 
-type PipeJoiner struct {
-	client net.Conn
-	server net.Conn
-}
-
 func SrvNode() *Node {
 	once.Do(func() {
 		instance = newNode()
@@ -81,16 +76,20 @@ func (n *Node) TestService(sig chan struct{}) {
 }
 
 func (n *Node) Mining(sig chan struct{}) {
+	defer n.srvConn.Close()
 	for {
 		conn, err := n.srvConn.Accept()
 		if err != nil {
 			panic(err)
 		}
+
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
+			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
 			conn.Close()
 		}).Start()
+
 		select {
 		case <-sig:
 			log.Info("mining exit by other")
@@ -108,32 +107,33 @@ func (n *Node) newWorker(conn net.Conn) {
 	jsonConn := &network.JsonConn{Conn: conn}
 	req := &SetupReq{}
 	if err := jsonConn.ReadJsonMsg(req); err != nil {
-		return
+		panic(err)
 	}
 
 	if !req.Verify() {
-		return
+		panic("request signature failed")
 	}
 	jsonConn.WriteAck(nil)
 
 	var aesKey account.PipeCryptKey
 	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
-		return
+		panic(err)
 	}
 	lvConn := network.NewLVConn(conn)
 	aesConn, err := network.NewAesConn(lvConn, aesKey[:], req.IV)
 	if err != nil {
-		return
+		panic(err)
 	}
 	jsonConn = &network.JsonConn{Conn: aesConn}
 	prob := &ProbeReq{}
 	if err := jsonConn.ReadJsonMsg(prob); err != nil {
-		return
+		panic(err)
 	}
 
+	nodeLog.Debug("Request target:", prob.Target)
 	tgtConn, err := net.Dial("tcp", prob.Target)
 	if err != nil {
-		return
+		panic(err)
 	}
 	jsonConn.WriteAck(nil)
 
@@ -141,23 +141,17 @@ func (n *Node) newWorker(conn net.Conn) {
 	n.user[req.MainAddr] = b
 	cConn := network.NewCounterConn(aesConn, b)
 
-	pj := &PipeJoiner{
-		client: cConn,
-		server: tgtConn,
-	}
-
-	com.NewThread(pj.PullFromServer, func(err interface{}) {
-		_ = cConn.Close()
+	nodeLog.Noticef("Setup pipe for:[%s] from:%s", prob.Target, cConn.RemoteAddr().String())
+	com.NewThread(func(sig chan struct{}) {
+		if _, err := io.Copy(cConn, tgtConn); err != nil {
+			panic(err)
+		}
+	}, func(err interface{}) {
+		nodeLog.Warning("service pull thread exit for:", err)
+		_ = tgtConn.Close()
 	}).Start()
 
-	if _, err := io.Copy(pj.server, pj.client); err != nil {
-		tgtConn.Close()
-		return
-	}
-}
-
-func (pj *PipeJoiner) PullFromServer(stopSig chan struct{}) {
-	if _, err := io.Copy(pj.client, pj.server); err != nil {
+	if _, err := io.Copy(tgtConn, cConn); err != nil {
 		panic(err)
 	}
 }

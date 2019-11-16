@@ -48,7 +48,6 @@ func Chain() *MicChain {
 }
 
 func newChain() *MicChain {
-
 	opts := opt.Options{
 		Strict:      opt.DefaultStrict,
 		Compression: opt.NoCompression,
