@@ -9,7 +9,9 @@ import (
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/op/go-logging"
+	"io"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -84,7 +86,9 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
+			if err != io.EOF {
+				nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
+			}
 			conn.Close()
 		}).Start()
 
@@ -156,7 +160,9 @@ func (n *Node) newWorker(conn net.Conn) {
 			}
 		}
 	}, func(err interface{}) {
-		nodeLog.Warning("service pull thread exit for:", err)
+		if !strings.Contains(err.(error).Error(), "use of closed network connection") {
+			nodeLog.Warning("Send Data to miner err:", err)
+		}
 		_ = tgtConn.Close()
 	}).Start()
 
