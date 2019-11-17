@@ -160,7 +160,8 @@ func (n *Node) newWorker(conn net.Conn) {
 			}
 		}
 	}, func(err interface{}) {
-		if !strings.Contains(err.(error).Error(), "use of closed network connection") {
+		if err != nil && err != io.EOF &&
+			!strings.Contains(err.(error).Error(), "use of closed network connection") {
 			nodeLog.Warning("Send Data to server err:", err)
 		}
 		_ = tgtConn.Close()
