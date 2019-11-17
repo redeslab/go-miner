@@ -86,7 +86,7 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			if err != io.EOF {
+			if err != nil && err != io.EOF {
 				nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
 			}
 			conn.Close()
@@ -161,7 +161,7 @@ func (n *Node) newWorker(conn net.Conn) {
 		}
 	}, func(err interface{}) {
 		if !strings.Contains(err.(error).Error(), "use of closed network connection") {
-			nodeLog.Warning("Send Data to miner err:", err)
+			nodeLog.Warning("Send Data to server err:", err)
 		}
 		_ = tgtConn.Close()
 	}).Start()
