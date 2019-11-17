@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"sync"
 )
@@ -19,12 +20,37 @@ var (
 type BucketManager interface {
 	RechargeBucket(*microchain.Receipt) error
 }
+
+type BucketMap struct {
+	sync.RWMutex
+	Queue map[common.Address]*Bucket
+}
+
+func newBucketMap() *BucketMap {
+	return &BucketMap{
+		Queue: make(map[common.Address]*Bucket),
+	}
+}
+
+func (bm *BucketMap) newBucketItem(addr common.Address) *Bucket {
+	b := newBucket()
+	bm.Lock()
+	defer bm.Unlock()
+	bm.Queue[addr] = b
+	return b
+}
+func (bm *BucketMap) getBucket(addr common.Address) *Bucket {
+	bm.RLock()
+	defer bm.RUnlock()
+	return bm.Queue[addr]
+}
+
 type Bucket struct {
 	sync.RWMutex
 	token int
 }
 
-func NewBucket() *Bucket {
+func newBucket() *Bucket {
 	return &Bucket{
 		token: InitBucketSize,
 	}

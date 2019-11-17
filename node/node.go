@@ -3,14 +3,12 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/hyperorchid/go-miner-pool/account"
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/op/go-logging"
-	"io"
 	"net"
 	"sync"
 )
@@ -25,7 +23,7 @@ type Node struct {
 	subAddr account.ID
 	srvConn net.Listener
 	pingSrv *net.UDPConn
-	user    map[common.Address]*Bucket
+	buckets *BucketMap
 }
 
 func SrvNode() *Node {
@@ -50,7 +48,7 @@ func newNode() *Node {
 		subAddr: sa,
 		srvConn: c,
 		pingSrv: p,
-		user:    make(map[common.Address]*Bucket),
+		buckets: newBucketMap(),
 	}
 
 	com.NewThreadWithID("[UDP Test Thread]", n.TestService, func(err interface{}) {
@@ -104,6 +102,7 @@ func (n *Node) Stop() {
 }
 
 func (n *Node) newWorker(conn net.Conn) {
+	_ = conn.(*net.TCPConn).SetKeepAlive(true)
 	jsonConn := &network.JsonConn{Conn: conn}
 	req := &SetupReq{}
 	if err := jsonConn.ReadJsonMsg(req); err != nil {
@@ -135,32 +134,52 @@ func (n *Node) newWorker(conn net.Conn) {
 	if err != nil {
 		panic(err)
 	}
+	_ = tgtConn.(*net.TCPConn).SetKeepAlive(true)
+
 	jsonConn.WriteAck(nil)
 
-	b := NewBucket()
-	n.user[req.MainAddr] = b
+	b := n.buckets.newBucketItem(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
 
 	nodeLog.Noticef("Setup pipe for:[%s] from:%s", prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
-		if _, err := io.Copy(cConn, tgtConn); err != nil {
-			panic(err)
+		buffer := make([]byte, 40960)
+		for {
+			no, err := cConn.Read(buffer)
+			if err != nil && no == 0 {
+				panic(err)
+			}
+			fmt.Println("read from proxy lib->:", buffer[:no])
+			_, err = tgtConn.Write(buffer[:no])
+			if err != nil {
+				panic(err)
+			}
 		}
 	}, func(err interface{}) {
 		nodeLog.Warning("service pull thread exit for:", err)
 		_ = tgtConn.Close()
 	}).Start()
 
-	if _, err := io.Copy(tgtConn, cConn); err != nil {
-		panic(err)
+	buffer := make([]byte, 40960)
+	for {
+		no, err := tgtConn.Read(buffer)
+		if err != nil && no == 0 {
+			panic(err)
+		}
+		fmt.Println("read from target server->:", buffer[:no])
+		_, err = cConn.Write(buffer[:no])
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
 func (n *Node) RechargeBucket(r *microchain.Receipt) error {
-	b, ok := n.user[r.From]
-	if !ok {
+	b := n.buckets.getBucket(r.From)
+	if b == nil {
 		return fmt.Errorf("no such user[%s] right now", r.From)
 	}
+
 	b.Recharge(int(r.Amount.Int64()))
 	return nil
 }
