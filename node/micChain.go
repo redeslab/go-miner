@@ -29,15 +29,8 @@ var (
 type MicChain struct {
 	conn          *network.JsonConn
 	database      *leveldb.DB
-	minerData     *MinerData
+	minerData     *microchain.MinerTxData
 	BucketManager BucketManager
-}
-
-type MinerData struct {
-	SubAddr      account.ID     `json:"address"`
-	PoolAddr     common.Address `json:"pool"`
-	PackMined    *big.Int       `json:"mined"`
-	LastMicNonce int64          `json:"micNonce"`
 }
 
 func Chain() *MicChain {
@@ -58,24 +51,17 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
+
 	minerID := WInst().SubAddress()
 	md, err := QueryMinerData(minerID)
 	if err != nil {
 		panic(err)
 	}
-	if minerID != md.SubAddr {
-		chainLog.Notice(md.String())
-		panic("It's not my data")
-	}
 	chainLog.Notice("Sync miner data:", md.String())
-
-	localMD := &MinerData{}
+	localMD := &microchain.MinerTxData{}
 	mdKey := minerKey(minerID, md.PoolAddr)
 	if err := com.GetJsonObj(db, mdKey, localMD); err != nil {
-		localMD = &MinerData{SubAddr: minerID, PoolAddr: md.PoolAddr, PackMined: big.NewInt(0)}
-		if err := com.SaveJsonObj(db, mdKey, localMD); err != nil {
-			panic(err)
-		}
+		localMD = &microchain.MinerTxData{PackMined: big.NewInt(0), EthData: md}
 	}
 
 	ntAddr, err := basc.QueryBySrvIP(md.PoolAddr.Bytes(), SysConf.BAS)
@@ -89,34 +75,31 @@ func newChain() *MicChain {
 	}
 	_ = c.SetDeadline(time.Now().Add(time.Second * 2))
 	conn := &network.JsonConn{Conn: c}
-	syn := &microchain.MinerSyn{
-		MinerSynData: &microchain.MinerSynData{
-			SubAddr:      minerID,
-			PackMined:    localMD.PackMined,
-			LastMicNonce: localMD.LastMicNonce,
+
+	syn := &microchain.ReceiptSync{
+		Typ: microchain.ReceiptSyncTypeMiner,
+		MR: &microchain.MinerReceipt{
+			MinerTxData: localMD,
 		},
 	}
-	syn.Sig = WInst().SignJSONSub(syn.MinerSynData)
+	syn.MR.Sig = WInst().SignJSONSub(syn.MR.MinerTxData)
 	if err := conn.WriteJsonMsg(syn); err != nil {
 		panic(err)
 	}
 
-	ack := &microchain.MinerAck{}
+	ack := &microchain.MinerTxData{}
 	if err := conn.ReadJsonMsg(ack); err != nil {
 		panic(err)
 	}
-	if !ack.Verify() {
-		panic("pool is not honest")
-	}
-	chainLog.Notice("Sync miner data:", ack.String())
 
-	if localMD.PoolAddr != ack.Pool {
-		panic("pool is not my manger")
-	}
+	fmt.Println(ack.String())
 
 	if localMD.LastMicNonce < ack.LastMicNonce {
-		log.Warn("account isn't same and corrected")
+		log.Warn("account isn't same and corrected", localMD.String(), ack.String())
 		localMD.PackMined = ack.PackMined
+		localMD.LastMicNonce = ack.LastMicNonce
+		localMD.EthData = ack.EthData
+		_ = com.SaveJsonObj(db, mdKey, localMD)
 	}
 
 	mc := &MicChain{
