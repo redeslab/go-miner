@@ -69,7 +69,7 @@ func newChain() *MicChain {
 		panic(err)
 	}
 	addr := net.JoinHostPort(string(ntAddr.NetAddr), com.ReceiptSyncPort)
-	c, err := net.Dial("tcp", addr)
+	c, err := net.DialTimeout("tcp", addr, time.Second*4)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +92,7 @@ func newChain() *MicChain {
 		panic(err)
 	}
 
-	fmt.Println(ack.String())
+	chainLog.Debug(ack.String())
 
 	if localMD.LastMicNonce < ack.LastMicNonce {
 		log.Warn("account isn't same and corrected", localMD.String(), ack.String())
@@ -100,6 +100,7 @@ func newChain() *MicChain {
 		localMD.LastMicNonce = ack.LastMicNonce
 		localMD.EthData = ack.EthData
 		_ = com.SaveJsonObj(db, mdKey, localMD)
+		chainLog.Notice("update local account by pool data:", localMD.String())
 	}
 
 	mc := &MicChain{
