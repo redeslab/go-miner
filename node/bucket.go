@@ -47,14 +47,6 @@ func (bm *BucketMap) BucketTimer(sig chan struct{}) {
 	}
 }
 
-func (bm *BucketMap) newBucketItem(addr common.Address) *Bucket {
-	b := newBucket(len(bm.Queue))
-	bm.Lock()
-	defer bm.Unlock()
-	bm.Queue[addr] = b
-	return b
-}
-
 func (bm *BucketMap) getBucket(addr common.Address) *Bucket {
 	bm.RLock()
 	defer bm.RUnlock()
