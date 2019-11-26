@@ -106,6 +106,7 @@ func (n *Node) Stop() {
 }
 
 func (n *Node) newWorker(conn net.Conn) {
+	log.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
 	jsonConn := &network.JsonConn{Conn: conn}
 	req := &SetupReq{}
