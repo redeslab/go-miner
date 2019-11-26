@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"sync"
+	"time"
 )
 
 const (
@@ -32,27 +33,65 @@ func newBucketMap() *BucketMap {
 	}
 }
 
+func (bm *BucketMap) BucketTimer(sig chan struct{}) {
+	for {
+		select {
+		case <-time.After(time.Minute * 15):
+			now := time.Now()
+			for key, val := range bm.Queue {
+				if now.Sub(val.upTime) > time.Minute*30 {
+					delete(bm.Queue, key)
+				}
+			}
+		}
+	}
+}
+
 func (bm *BucketMap) newBucketItem(addr common.Address) *Bucket {
-	b := newBucket()
+	b := newBucket(len(bm.Queue))
 	bm.Lock()
 	defer bm.Unlock()
 	bm.Queue[addr] = b
 	return b
 }
+
 func (bm *BucketMap) getBucket(addr common.Address) *Bucket {
 	bm.RLock()
 	defer bm.RUnlock()
 	return bm.Queue[addr]
 }
 
-type Bucket struct {
-	sync.RWMutex
-	token int
+func (bm *BucketMap) delBucket(addr common.Address) {
+	bm.Lock()
+	defer bm.Unlock()
+	delete(bm.Queue, addr)
 }
 
-func newBucket() *Bucket {
+func (bm *BucketMap) addPipe(addr common.Address) *Bucket {
+	bm.Lock()
+	defer bm.Unlock()
+	if b, ok := bm.Queue[addr]; ok {
+		return b
+	}
+	b := newBucket(len(bm.Queue))
+	bm.Queue[addr] = b
+	return b
+}
+
+//TODO::expire old buckets
+
+type Bucket struct {
+	BID int
+	sync.RWMutex
+	token  int
+	upTime time.Time
+}
+
+func newBucket(bid int) *Bucket {
 	return &Bucket{
-		token: InitBucketSize,
+		BID:    bid,
+		token:  InitBucketSize,
+		upTime: time.Now(),
 	}
 }
 
@@ -64,8 +103,9 @@ func (b *Bucket) ReadCount(no int) error {
 func (b *Bucket) WriteCount(no int) error {
 	b.Lock()
 	defer b.Unlock()
+	b.upTime = time.Now()
 	b.token -= no
-	nodeLog.Debug("bucket used", no, " last:", b.token)
+	nodeLog.Debugf("bucket[%d] used:[%d] last:[%d]", b.BID, no, b.token)
 	if b.token <= 0 {
 		return ErrNoPacketBalance
 	}
@@ -76,5 +116,5 @@ func (b *Bucket) Recharge(no int) {
 	b.Lock()
 	defer b.Unlock()
 	b.token += no
-	nodeLog.Notice("bucket recharged", no, " now:", b.token)
+	nodeLog.Noticef("bucket[%d] recharged:[%d]  now:", b.BID, no, b.token)
 }

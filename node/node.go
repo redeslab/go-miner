@@ -9,9 +9,7 @@ import (
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/op/go-logging"
-	"io"
 	"net"
-	"strings"
 	"sync"
 )
 
@@ -56,6 +54,10 @@ func newNode() *Node {
 	com.NewThreadWithID("[UDP Test Thread]", n.TestService, func(err interface{}) {
 		panic(err)
 	}).Start()
+
+	com.NewThreadWithID("[Buckets checker thread]", n.buckets.BucketTimer, func(err interface{}) {
+		panic(err)
+	}).Start()
 	return n
 }
 
@@ -86,18 +88,9 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			if err != nil && err != io.EOF {
-				nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
-			}
-			conn.Close()
+			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
+			_ = conn.Close()
 		}).Start()
-
-		select {
-		case <-sig:
-			log.Info("mining exit by other")
-			return
-		default:
-		}
 	}
 }
 
@@ -143,28 +136,26 @@ func (n *Node) newWorker(conn net.Conn) {
 
 	jsonConn.WriteAck(nil)
 
-	b := n.buckets.newBucketItem(req.MainAddr)
+	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
 
-	nodeLog.Noticef("Setup pipe for:[%s] from:%s", prob.Target, cConn.RemoteAddr().String())
+	nodeLog.Noticef("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
 		buffer := make([]byte, 40960)
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
+				nodeLog.Warningf("[bid=%d] Read from client[%s] err:%s", b.BID, cConn.RemoteAddr(), err)
 				panic(err)
 			}
 			//fmt.Println("read from proxy lib->:", buffer[:no])
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
+				nodeLog.Warningf("[bid=%d] write to target[%s] err:%s", b.BID, prob.Target, err)
 				panic(err)
 			}
 		}
 	}, func(err interface{}) {
-		if err != nil && err != io.EOF &&
-			!strings.Contains(err.(error).Error(), "use of closed network connection") {
-			nodeLog.Warning("Send Data to server err:", err)
-		}
 		_ = tgtConn.Close()
 	}).Start()
 
@@ -172,11 +163,13 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
+			nodeLog.Warningf("[bid=%d] read from target[%s] err:%s", b.BID, prob.Target, err)
 			panic(err)
 		}
 		//fmt.Println("read from target server->:", buffer[:no])
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
+			nodeLog.Warningf("[bid=%d] write to client[%s] err:%s", b.BID, cConn.RemoteAddr(), err)
 			panic(err)
 		}
 	}
