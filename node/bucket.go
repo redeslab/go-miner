@@ -70,8 +70,6 @@ func (bm *BucketMap) addPipe(addr common.Address) *Bucket {
 	return b
 }
 
-//TODO::expire old buckets
-
 type Bucket struct {
 	BID int
 	sync.RWMutex
