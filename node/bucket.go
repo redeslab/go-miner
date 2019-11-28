@@ -106,5 +106,6 @@ func (b *Bucket) Recharge(no int) {
 	b.Lock()
 	defer b.Unlock()
 	b.token += no
-	nodeLog.Noticef("bucket[%d] recharged:[%d]  now:", b.BID, no, b.token)
+	nodeLog.Noticef("bucket[%d] recharged:[%d]  now:[%d"+
+		"]", b.BID, no, b.token)
 }
