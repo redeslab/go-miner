@@ -76,13 +76,15 @@ func newChain() *MicChain {
 	_ = c.SetDeadline(time.Now().Add(time.Second * 2))
 	conn := &network.JsonConn{Conn: c}
 
+	mr := &microchain.MinerReceipt{
+		MinerTxData: localMD,
+	}
+	mr.Sig = WInst().SignJSONSub(mr.MinerTxData)
 	syn := &microchain.ReceiptSync{
 		Typ: microchain.ReceiptSyncTypeMiner,
-		MR: &microchain.MinerReceipt{
-			MinerTxData: localMD,
-		},
+		MR:  mr,
 	}
-	syn.MR.Sig = WInst().SignJSONSub(syn.MR.MinerTxData)
+
 	if err := conn.WriteJsonMsg(syn); err != nil {
 		panic(err)
 	}
@@ -93,7 +95,6 @@ func newChain() *MicChain {
 	}
 
 	chainLog.Debug(ack.String())
-
 	if localMD.LastMicNonce < ack.LastMicNonce {
 		log.Warn("account isn't same and corrected", localMD.String(), ack.String())
 		localMD.PackMined = ack.PackMined
