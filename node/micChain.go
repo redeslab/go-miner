@@ -124,6 +124,8 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 			panic(err)
 		}
 
+		chainLog.Notice(r.String())
+
 		if mc.minerData.LastMicNonce >= r.Nonce {
 			log.Warn("outdated receipt data")
 			continue
@@ -134,13 +136,6 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 			continue
 		}
 		mc.saveReceipt(r)
-
-		select {
-		case <-sig:
-			log.Info("mic chain sync exit by other")
-			return
-		default:
-		}
 	}
 }
 
