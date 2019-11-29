@@ -76,40 +76,24 @@ func newChain() *MicChain {
 	_ = c.SetDeadline(time.Now().Add(time.Second * 2))
 	conn := &network.JsonConn{Conn: c}
 
-	mr := &microchain.MinerReceipt{
-		MinerTxData: localMD,
-	}
-	mr.Sig = WInst().SignJSONSub(mr.MinerTxData)
 	syn := &microchain.ReceiptSync{
-		Typ: microchain.ReceiptSyncTypeMiner,
-		MR:  mr,
+		ReceiptQueryData: &microchain.ReceiptQueryData{
+			Typ:       microchain.ReceiptSyncTypeMiner,
+			QueryAddr: WInst().SubAddress().String(),
+			PoolAddr:  md.PoolAddr,
+		},
 	}
-
+	syn.Sig = WInst().SignJSONSub(syn.ReceiptQueryData)
 	if err := conn.WriteJsonMsg(syn); err != nil {
 		panic(err)
 	}
-
-	ack := &microchain.MinerTxData{}
-	if err := conn.ReadJsonMsg(ack); err != nil {
-		panic(err)
-	}
-
-	chainLog.Debug(ack.String())
-	if localMD.LastMicNonce < ack.LastMicNonce {
-		log.Warn("account isn't same and corrected", localMD.String(), ack.String())
-		localMD.PackMined = ack.PackMined
-		localMD.LastMicNonce = ack.LastMicNonce
-		localMD.EthData = ack.EthData
-		_ = com.SaveJsonObj(db, mdKey, localMD)
-		chainLog.Notice("update local account by pool data:", localMD.String())
-	}
+	_ = conn.SetDeadline(time.Time{})
 
 	mc := &MicChain{
 		conn:      conn,
 		database:  db,
 		minerData: localMD,
 	}
-	_ = mc.conn.SetDeadline(time.Time{})
 	return mc
 }
 
