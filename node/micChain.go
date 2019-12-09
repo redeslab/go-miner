@@ -103,5 +103,5 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 }
 
 func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
-	//TODO::make a merckle tree
+	//TODO::make a Merckle tree
 }

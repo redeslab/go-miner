@@ -3,6 +3,7 @@ package node
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/hyperorchid/go-miner-pool/account"
 	com "github.com/hyperorchid/go-miner-pool/common"
@@ -183,4 +184,9 @@ func (n *Node) RechargeBucket(r *microchain.Receipt) error {
 
 	b.Recharge(int(r.Amount.Int64()))
 	return nil
+}
+
+func (n *Node) ShowUserBucket(user string) *Bucket {
+	return n.buckets.getBucket(common.HexToAddress(user))
+
 }

@@ -73,14 +73,14 @@ func (bm *BucketMap) addPipe(addr common.Address) *Bucket {
 type Bucket struct {
 	BID int
 	sync.RWMutex
-	token  int
+	Token  int
 	upTime time.Time
 }
 
 func newBucket(bid int) *Bucket {
 	return &Bucket{
 		BID:    bid,
-		token:  InitBucketSize,
+		Token:  InitBucketSize,
 		upTime: time.Now(),
 	}
 }
@@ -94,9 +94,9 @@ func (b *Bucket) WriteCount(no int) error {
 	b.Lock()
 	defer b.Unlock()
 	b.upTime = time.Now()
-	b.token -= no
-	nodeLog.Debugf("bucket[%d] used:[%d] last:[%d]", b.BID, no, b.token)
-	if b.token <= 0 {
+	b.Token -= no
+	//nodeLog.Debugf("bucket[%d] used:[%d] last:[%d]", b.BID, no, b.Token)
+	if b.Token <= 0 {
 		return ErrNoPacketBalance
 	}
 	return nil
@@ -105,7 +105,7 @@ func (b *Bucket) WriteCount(no int) error {
 func (b *Bucket) Recharge(no int) {
 	b.Lock()
 	defer b.Unlock()
-	b.token += no
+	b.Token += no
 	nodeLog.Noticef("bucket[%d] recharged:[%d]  now:[%d"+
-		"]", b.BID, no, b.token)
+		"]", b.BID, no, b.Token)
 }
