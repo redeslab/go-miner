@@ -10,7 +10,6 @@ import (
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	"github.com/op/go-logging"
-	"io"
 	"net"
 	"sync"
 )
@@ -90,7 +89,7 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
+			//nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
 			_ = conn.Close()
 		}).Start()
 	}
@@ -141,26 +140,18 @@ func (n *Node) newWorker(conn net.Conn) {
 	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
 
-	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
+	//nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
 		buffer := make([]byte, 40960)
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
-				if err != io.EOF {
-					nodeLog.Warningf("[bid=%d] Read from client[%s] err:%s", b.BID, cConn.RemoteAddr(), err)
-					panic(err)
-				}
-				return
+				panic(err)
 			}
 			//fmt.Println("read from proxy lib->:", buffer[:no])
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
-				if err != io.EOF {
-					nodeLog.Warningf("[bid=%d] write to target[%s] err:%s", b.BID, prob.Target, err)
-					panic(err)
-				}
-				return
+				panic(err)
 			}
 		}
 	}, func(err interface{}) {
@@ -171,20 +162,12 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
-			if err != io.EOF {
-				nodeLog.Warningf("[bid=%d] read from target[%s] err:%s", b.BID, prob.Target, err)
-				panic(err)
-			}
-			return
+			panic(err)
 		}
 		//fmt.Println("read from target server->:", buffer[:no])
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			if err != io.EOF {
-				nodeLog.Warningf("[bid=%d] write to client[%s] err:%s", b.BID, cConn.RemoteAddr(), err)
-				panic(err)
-			}
-			return
+			panic(err)
 		}
 	}
 }
