@@ -89,7 +89,7 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			//nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
+			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
 			_ = conn.Close()
 		}).Start()
 	}
@@ -128,7 +128,7 @@ func (n *Node) newWorker(conn net.Conn) {
 		panic(err)
 	}
 
-	//nodeLog.Debug("Request target:", prob.Target)
+	nodeLog.Debug("Request target:", prob.Target)
 	tgtConn, err := net.Dial("tcp", prob.Target)
 	if err != nil {
 		panic(err)
@@ -140,7 +140,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
 
-	//nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
+	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
 		buffer := make([]byte, 40960)
 		for {
@@ -148,7 +148,7 @@ func (n *Node) newWorker(conn net.Conn) {
 			if err != nil && no == 0 {
 				panic(err)
 			}
-			//fmt.Println("read from proxy lib->:", buffer[:no])
+			fmt.Println("read from proxy lib->:", buffer[:no])
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
 				panic(err)
@@ -164,7 +164,7 @@ func (n *Node) newWorker(conn net.Conn) {
 		if err != nil && no == 0 {
 			panic(err)
 		}
-		//fmt.Println("read from target server->:", buffer[:no])
+		fmt.Println("read from target server->:", buffer[:no])
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
 			panic(err)
