@@ -148,7 +148,6 @@ func (n *Node) newWorker(conn net.Conn) {
 			if err != nil && no == 0 {
 				panic(err)
 			}
-			fmt.Println("read from proxy lib->:", buffer[:no])
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
 				panic(err)
