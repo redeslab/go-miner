@@ -40,6 +40,7 @@ func (bm *BucketMap) BucketTimer(sig chan struct{}) {
 			now := time.Now()
 			for key, val := range bm.Queue {
 				if now.Sub(val.upTime) > time.Minute*30 {
+					nodeLog.Noticef("bucket map remove :%s ", key.String())
 					delete(bm.Queue, key)
 				}
 			}
