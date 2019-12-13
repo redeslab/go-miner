@@ -46,7 +46,6 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-
 	minerID := WInst().SubAddress()
 	md, err := QueryMinerData(minerID)
 	if err != nil {
@@ -91,9 +90,7 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 		if err := mc.conn.ReadJsonMsg(r); err != nil {
 			panic(err)
 		}
-
 		chainLog.Notice(r.String())
-
 		if err := mc.BucketManager.RechargeBucket(r); err != nil {
 			log.Warn("recharge err:", err)
 			continue
