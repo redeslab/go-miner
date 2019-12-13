@@ -11,7 +11,7 @@ import (
 const (
 	InitBucketSize     = 1 << 24 //16M
 	RechargePieceSize  = 1 << 22 //4M
-	MaxLostRechargeReq = 4
+	MaxLostRechargeReq = 2
 )
 
 var (
