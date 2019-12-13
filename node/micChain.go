@@ -57,8 +57,8 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-	addr := net.JoinHostPort(string(ntAddr.NetAddr), com.ReceiptSyncPort)
-	c, err := net.DialTimeout("tcp", addr, time.Second*4)
+	addr := &net.UDPAddr{IP: net.ParseIP(string(ntAddr.NetAddr)), Port: com.ReceiptSyncPort}
+	c, err := net.DialTimeout("udp", addr.String(), time.Second*4)
 	if err != nil {
 		panic(err)
 	}
