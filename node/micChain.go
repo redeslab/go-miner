@@ -23,6 +23,7 @@ var (
 )
 
 type MicChain struct {
+	Sign          *microchain.ReceiptSync
 	conn          *network.JsonConn
 	database      *leveldb.DB
 	BucketManager BucketManager
@@ -80,6 +81,7 @@ func newChain() *MicChain {
 	mc := &MicChain{
 		conn:     conn,
 		database: db,
+		Sign:     syn,
 	}
 	return mc
 }
@@ -99,18 +101,10 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 	}
 }
 func (mc *MicChain) KeepAlive(sig chan struct{}) {
-
-	ka := &microchain.ReceiptSync{
-		ReceiptQueryData: &microchain.ReceiptQueryData{
-			Typ:       microchain.ReceiptKeepAlive,
-			QueryAddr: WInst().SubAddress().String(),
-		},
-	}
-
 	for {
 		select {
 		case <-time.After(30 * time.Second):
-			if err := mc.conn.WriteJsonMsg(ka); err != nil {
+			if err := mc.conn.WriteJsonMsg(mc.Sign); err != nil {
 				panic(err) //TODO:: try to join pool again
 			}
 		}
