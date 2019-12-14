@@ -35,7 +35,7 @@ var SysConf = &Conf{
 	EthereumConfig: &com.EthereumConfig{
 		NetworkID:   com.RopstenNetworkId,
 		EthApiUrl:   "https://ropsten.infura.io/v3/f3245cef90ed440897e43efc6b3dd0f7",
-		MicroPaySys: common.HexToAddress("0xDE9695b11182f00E55A34F0115d6eE83A9894606"),
+		MicroPaySys: common.HexToAddress("0x660c2B067b0EE6a602305Fe167279385C123e322"),
 		Token:       common.HexToAddress("0x3adc98d5e292355e59ae2ca169d241d889b092e3"),
 	},
 	BAS: "167.179.112.108",
