@@ -98,6 +98,24 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 		mc.saveReceipt(r)
 	}
 }
+func (mc *MicChain) KeepAlive(sig chan struct{}) {
+
+	ka := &microchain.ReceiptSync{
+		ReceiptQueryData: &microchain.ReceiptQueryData{
+			Typ:       microchain.ReceiptKeepAlive,
+			QueryAddr: WInst().SubAddress().String(),
+		},
+	}
+
+	for {
+		select {
+		case <-time.After(30 * time.Second):
+			if err := mc.conn.WriteJsonMsg(ka); err != nil {
+				panic(err) //TODO:: try to join pool again
+			}
+		}
+	}
+}
 
 func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
 	//TODO::make a Merckle tree
