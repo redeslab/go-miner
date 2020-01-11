@@ -62,7 +62,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 		BAS: "108.61.223.99",
 	}
 
-	byt, err := json.Marshal(defaultSys)
+	byt, err := json.MarshalIndent(defaultSys, "", "\t")
 	confPath := filepath.Join(baseDir, string(filepath.Separator), node.ConfFile)
 	if err := ioutil.WriteFile(confPath, byt, 0644); err != nil {
 		panic(err)
