@@ -1,3 +1,3 @@
 #!/bin/sh
 
-HOP -d -p 123 $@
+HOP -p 123 $@
