@@ -1,22 +1,26 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"golang.org/x/crypto/ssh/terminal"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
 )
 
-type Conf struct {
-	DebugMode  bool
+type PathConf struct {
 	WalletPath string
 	DBPath     string
 	LogPath    string
-	BAS        string
 	PidPath    string
+	ConfPath   string
+}
+
+type Conf struct {
+	BAS string
 	*com.EthereumConfig
 }
 
@@ -24,22 +28,14 @@ const (
 	DefaultBaseDir = ".hop"
 	WalletFile     = "wallet.json"
 	DataBase       = "Receipts"
-	LogFile        = "hop.log"
-	PidFile        = "hop.pid"
+	LogFile        = "log.hop"
+	PidFile        = "pid.hop"
+	ConfFile       = "conf.hop"
 )
 
 var CMDServicePort = "42017"
-
-//TODO::
-var SysConf = &Conf{
-	EthereumConfig: &com.EthereumConfig{
-		NetworkID:   com.RopstenNetworkId,
-		EthApiUrl:   "https://ropsten.infura.io/v3/f3245cef90ed440897e43efc6b3dd0f7",
-		MicroPaySys: common.HexToAddress("0x4291d9Ff189D90Ba875E0fc1Da4D602406DD7D6e"),
-		Token:       common.HexToAddress("0xAd44c8493dE3FE2B070f33927A315b50Da9a0e25"),
-	},
-	BAS: "108.61.223.99",
-}
+var SysConf = &Conf{}
+var PathSetting = &PathConf{}
 
 func BaseDir() string {
 	usr, err := user.Current()
@@ -54,22 +50,46 @@ func WalletDir(base string) string {
 	return filepath.Join(base, string(filepath.Separator), WalletFile)
 }
 
-func (c *Conf) InitPath(base string) {
-	c.WalletPath = filepath.Join(base, string(filepath.Separator), WalletFile)
-	c.DBPath = filepath.Join(base, string(filepath.Separator), DataBase)
-	c.LogPath = filepath.Join(base, string(filepath.Separator), LogFile)
-	c.PidPath = filepath.Join(base, string(filepath.Separator), PidFile)
+func (pc *PathConf) String() string {
+	return fmt.Sprintf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++\n"+
+		"+WalletPath:\t%s+\n"+
+		"+DBPath:\t%s+\n"+
+		"+LogPath:\t%s+\n"+
+		"+PidPath:\t%s+\n"+
+		"+ConfPath:\t%s+\n"+
+		"++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
+		pc.WalletPath,
+		pc.DBPath,
+		pc.LogPath,
+		pc.PidPath,
+		pc.ConfPath)
 }
 
-func InitMinerNode(auth, port string) {
-
+func (pc *PathConf) InitPath() {
 	base := BaseDir()
 	if _, ok := com.FileExists(base); !ok {
 		panic("Init node first, please!' HOP init -p [PASSWORD]'")
-		return
 	}
-	SysConf.InitPath(base)
+	pc.WalletPath = filepath.Join(base, string(filepath.Separator), WalletFile)
+	pc.DBPath = filepath.Join(base, string(filepath.Separator), DataBase)
+	pc.LogPath = filepath.Join(base, string(filepath.Separator), LogFile)
+	pc.PidPath = filepath.Join(base, string(filepath.Separator), PidFile)
+	pc.ConfPath = filepath.Join(base, string(filepath.Separator), ConfFile)
+	fmt.Println(pc.String())
+}
 
+func InitMinerNode(auth, port string) {
+	PathSetting.InitPath()
+
+	jsonStr, err := ioutil.ReadFile(PathSetting.ConfPath)
+	if err != nil {
+		panic("Load config failed")
+	}
+	if err := json.Unmarshal(jsonStr, SysConf); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(SysConf.String())
 	if auth == "" {
 		fmt.Println("Password=>")
 		pw, err := terminal.ReadPassword(int(os.Stdin.Fd()))
@@ -83,6 +103,6 @@ func InitMinerNode(auth, port string) {
 		panic(err)
 	}
 
-	com.InitLog(SysConf.LogPath)
+	com.InitLog(PathSetting.LogPath)
 	CMDServicePort = port
 }

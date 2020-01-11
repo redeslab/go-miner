@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperorchid/go-miner-pool/account"
-	"github.com/hyperorchid/go-miner-pool/common"
+	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner/node"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 var InitCmd = &cobra.Command{
@@ -22,12 +26,12 @@ func init() {
 func initMiner(_ *cobra.Command, _ []string) {
 
 	baseDir := node.BaseDir()
-	if _, ok := common.FileExists(baseDir); ok {
+	if _, ok := com.FileExists(baseDir); ok {
 		fmt.Println("Duplicate init operation")
 		return
 	}
 	if len(param.password) == 0 {
-		pwd, err := common.ReadPassWord2()
+		pwd, err := com.ReadPassWord2()
 		if err != nil {
 			panic(err)
 		}
@@ -47,4 +51,20 @@ func initMiner(_ *cobra.Command, _ []string) {
 		panic(err)
 	}
 	fmt.Println("Create wallet success!")
+
+	defaultSys := &node.Conf{
+		EthereumConfig: &com.EthereumConfig{
+			NetworkID:   com.RopstenNetworkId,
+			EthApiUrl:   "https://ropsten.infura.io/v3/f3245cef90ed440897e43efc6b3dd0f7",
+			MicroPaySys: common.HexToAddress("0xbabababababababababababababababababababa"),
+			Token:       common.HexToAddress("0xbabababababababababababababababababababa"),
+		},
+		BAS: "108.61.223.99",
+	}
+
+	byt, err := json.Marshal(defaultSys)
+	confPath := filepath.Join(baseDir, string(filepath.Separator), node.ConfFile)
+	if err := ioutil.WriteFile(confPath, byt, 0644); err != nil {
+		panic(err)
+	}
 }

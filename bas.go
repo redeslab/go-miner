@@ -29,7 +29,7 @@ func init() {
 
 func basReg(_ *cobra.Command, _ []string) {
 
-	node.SysConf.WalletPath = node.WalletDir(node.BaseDir())
+	node.PathSetting.WalletPath = node.WalletDir(node.BaseDir())
 
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)

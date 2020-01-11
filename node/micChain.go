@@ -43,7 +43,7 @@ func newChain() *MicChain {
 		Filter:      filter.NewBloomFilter(10),
 	}
 
-	db, err := leveldb.OpenFile(SysConf.DBPath, &opts)
+	db, err := leveldb.OpenFile(PathSetting.DBPath, &opts)
 	if err != nil {
 		panic(err)
 	}

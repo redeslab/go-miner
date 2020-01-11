@@ -21,7 +21,7 @@ func WInst() *MinerWallet {
 	return wInstance
 }
 func loadWallet() *MinerWallet {
-	w, err := account.LoadWallet(SysConf.WalletPath)
+	w, err := account.LoadWallet(PathSetting.WalletPath)
 	if err != nil {
 		panic(err)
 	}
