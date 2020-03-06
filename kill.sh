@@ -1,3 +1,3 @@
 #!/bin/sh
 
-kill `cat ~/.hop/hop.pid`
+kill `cat ~/.hop/pid.hop`
