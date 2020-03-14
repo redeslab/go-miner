@@ -109,6 +109,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 
 	if !req.Verify() {
+		nodeLog.Warning(req.String())
 		panic("request signature failed")
 	}
 	jsonConn.WriteAck(nil)
