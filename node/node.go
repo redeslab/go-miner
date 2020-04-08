@@ -149,12 +149,12 @@ func (n *Node) newWorker(conn net.Conn) {
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
-				nodeLog.Noticef("Client->Proxy read err:%s", err)
+				//nodeLog.Noticef("Client->Proxy read err:%s", err)
 				panic(err)
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
-				nodeLog.Noticef("Proxy->Target write err:%s", err)
+				//nodeLog.Noticef("Proxy->Target write err:%s", err)
 				panic(err)
 			}
 		}
@@ -166,12 +166,12 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
-			nodeLog.Noticef("Target->Proxy read err:%s", err)
+			//nodeLog.Noticef("Target->Proxy read err:%s", err)
 			panic(err)
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			nodeLog.Noticef("Proxy->Client read err:%s", err)
+			//nodeLog.Noticef("Proxy->Client read err:%s", err)
 			panic(err)
 		}
 	}
