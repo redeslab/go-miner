@@ -99,7 +99,7 @@ func (n *Node) Stop() {
 	_ = n.srvConn.Close()
 }
 
-const BUFFER_SIZE = 1 << 17
+const BUFFER_SIZE = 1 << 20
 
 func (n *Node) newWorker(conn net.Conn) {
 	log.Debug("new conn:", conn.RemoteAddr().String())
