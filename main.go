@@ -75,6 +75,9 @@ func mainRun(_ *cobra.Command, _ []string) {
 	com.NewThreadWithID("[Micro Chain Sync Thread]", c.Sync, func(err interface{}) {
 		panic(err)
 	}).Start()
+	com.NewThreadWithID("[Micro Chain Keep Alive]", c.KeepAlive, func(err interface{}) {
+		panic(err)
+	}).Start()
 
 	com.NewThreadWithID("[Cmd Service Thread]", func(c chan struct{}) {
 		StartCmdService()

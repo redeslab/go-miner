@@ -23,6 +23,7 @@ var (
 )
 
 type MicChain struct {
+	Sign          *microchain.ReceiptSync
 	conn          *network.JsonConn
 	database      *leveldb.DB
 	BucketManager BucketManager
@@ -46,7 +47,6 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-
 	minerID := WInst().SubAddress()
 	md, err := QueryMinerData(minerID)
 	if err != nil {
@@ -57,8 +57,8 @@ func newChain() *MicChain {
 	if err != nil {
 		panic(err)
 	}
-	addr := net.JoinHostPort(string(ntAddr.NetAddr), com.ReceiptSyncPort)
-	c, err := net.DialTimeout("tcp", addr, time.Second*4)
+	addr := &net.UDPAddr{IP: net.ParseIP(string(ntAddr.NetAddr)), Port: com.ReceiptSyncPort}
+	c, err := net.DialTimeout("udp", addr.String(), time.Second*4)
 	if err != nil {
 		panic(err)
 	}
@@ -81,6 +81,7 @@ func newChain() *MicChain {
 	mc := &MicChain{
 		conn:     conn,
 		database: db,
+		Sign:     syn,
 	}
 	return mc
 }
@@ -91,14 +92,22 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 		if err := mc.conn.ReadJsonMsg(r); err != nil {
 			panic(err)
 		}
-
 		chainLog.Notice(r.String())
-
 		if err := mc.BucketManager.RechargeBucket(r); err != nil {
 			log.Warn("recharge err:", err)
 			continue
 		}
 		mc.saveReceipt(r)
+	}
+}
+func (mc *MicChain) KeepAlive(sig chan struct{}) {
+	for {
+		select {
+		case <-time.After(30 * time.Second):
+			if err := mc.conn.WriteJsonMsg(mc.Sign); err != nil {
+				panic(err) //TODO:: try to join pool again
+			}
+		}
 	}
 }
 
