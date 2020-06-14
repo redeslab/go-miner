@@ -145,7 +145,7 @@ func (n *Node) newWorker(conn net.Conn) {
 
 	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
-		buffer := make([]byte, BUFFER_SIZE)
+		buffer := make([]byte, ConnectionBufSize)
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
@@ -161,8 +161,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
 	}).Start()
-
-	buffer := make([]byte, BUFFER_SIZE)
+	buffer := make([]byte, ConnectionBufSize)
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
