@@ -24,12 +24,12 @@ func init() {
 		"p", "", "HOP bas -p [PASSWORD]")
 
 	BasCmd.Flags().StringVarP(&param.basIP, "basIP",
-		"b", "167.179.112.108", "HOP bas -b [BAS IP]]")
+		"b", "108.61.223.99", "HOP bas -b [BAS IP]]")
 }
 
 func basReg(_ *cobra.Command, _ []string) {
 
-	node.SysConf.WalletPath = node.WalletDir(node.BaseDir())
+	node.PathSetting.WalletPath = node.WalletDir(node.BaseDir())
 
 	if err := node.WInst().Open(param.password); err != nil {
 		panic(err)

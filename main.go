@@ -37,9 +37,6 @@ func init() {
 	rootCmd.Flags().BoolVarP(&param.version, "version",
 		"v", false, "HOP version")
 
-	rootCmd.Flags().BoolVarP(&node.SysConf.DebugMode, "debug",
-		"d", false, "Debug Mode")
-
 	rootCmd.Flags().StringVarP(&param.password, "password",
 		"p", "", "Password to unlock miner")
 
@@ -48,7 +45,7 @@ func init() {
 
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
-		"b", "167.179.112.108", "Bas IP")
+		"b", "108.61.223.99", "Bas IP")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
@@ -93,7 +90,7 @@ func mainRun(_ *cobra.Command, _ []string) {
 func waitSignal(done chan bool) {
 	pid := strconv.Itoa(os.Getpid())
 	fmt.Printf("\n>>>>>>>>>>miner start at pid(%s)<<<<<<<<<<\n", pid)
-	if err := ioutil.WriteFile(node.SysConf.PidPath, []byte(pid), 0644); err != nil {
+	if err := ioutil.WriteFile(node.PathSetting.PidPath, []byte(pid), 0644); err != nil {
 		fmt.Print("failed to write running pid", err)
 	}
 
