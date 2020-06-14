@@ -12,3 +12,4 @@
 *.out
 /.idea
 /.pid
+/pbs/cmdService.pb.go

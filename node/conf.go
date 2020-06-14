@@ -28,6 +28,8 @@ const (
 	PidFile        = "hop.pid"
 )
 
+var CMDServicePort = "42017"
+
 //TODO::
 var SysConf = &Conf{
 	EthereumConfig: &com.EthereumConfig{
@@ -59,7 +61,7 @@ func (c *Conf) InitPath(base string) {
 	c.PidPath = filepath.Join(base, string(filepath.Separator), PidFile)
 }
 
-func InitMinerNode(auth string) {
+func InitMinerNode(auth, port string) {
 
 	base := BaseDir()
 	if _, ok := com.FileExists(base); !ok {
@@ -82,4 +84,5 @@ func InitMinerNode(auth string) {
 	}
 
 	com.InitLog(SysConf.LogPath)
+	CMDServicePort = port
 }

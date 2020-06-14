@@ -1,19 +1,15 @@
 package node
 
 import (
-	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/hyperorchid/go-miner-pool/account"
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner-pool/microchain"
 	"github.com/hyperorchid/go-miner-pool/network"
 	basc "github.com/hyperorchidlab/BAS/client"
 	"github.com/op/go-logging"
-	"math/big"
 	"net"
 	"sync"
 	"time"
@@ -29,7 +25,6 @@ var (
 type MicChain struct {
 	conn          *network.JsonConn
 	database      *leveldb.DB
-	minerData     *microchain.MinerTxData
 	BucketManager BucketManager
 }
 
@@ -58,12 +53,6 @@ func newChain() *MicChain {
 		panic(err)
 	}
 	chainLog.Notice("Sync miner data:", md.String())
-	localMD := &microchain.MinerTxData{}
-	mdKey := minerKey(minerID, md.PoolAddr)
-	if err := com.GetJsonObj(db, mdKey, localMD); err != nil {
-		localMD = &microchain.MinerTxData{PackMined: big.NewInt(0), EthData: md}
-	}
-
 	ntAddr, err := basc.QueryBySrvIP(md.PoolAddr.Bytes(), SysConf.BAS)
 	if err != nil {
 		panic(err)
@@ -76,45 +65,24 @@ func newChain() *MicChain {
 	_ = c.SetDeadline(time.Now().Add(time.Second * 2))
 	conn := &network.JsonConn{Conn: c}
 
-	mr := &microchain.MinerReceipt{
-		MinerTxData: localMD,
-	}
-	mr.Sig = WInst().SignJSONSub(mr.MinerTxData)
 	syn := &microchain.ReceiptSync{
-		Typ: microchain.ReceiptSyncTypeMiner,
-		MR:  mr,
+		ReceiptQueryData: &microchain.ReceiptQueryData{
+			Typ:       microchain.ReceiptSyncTypeMiner,
+			QueryAddr: WInst().SubAddress().String(),
+			PoolAddr:  md.PoolAddr,
+		},
 	}
-
+	syn.Sig = WInst().SignJSONSub(syn.ReceiptQueryData)
 	if err := conn.WriteJsonMsg(syn); err != nil {
 		panic(err)
 	}
-
-	ack := &microchain.MinerTxData{}
-	if err := conn.ReadJsonMsg(ack); err != nil {
-		panic(err)
-	}
-
-	chainLog.Debug(ack.String())
-	if localMD.LastMicNonce < ack.LastMicNonce {
-		log.Warn("account isn't same and corrected", localMD.String(), ack.String())
-		localMD.PackMined = ack.PackMined
-		localMD.LastMicNonce = ack.LastMicNonce
-		localMD.EthData = ack.EthData
-		_ = com.SaveJsonObj(db, mdKey, localMD)
-		chainLog.Notice("update local account by pool data:", localMD.String())
-	}
+	_ = conn.SetDeadline(time.Time{})
 
 	mc := &MicChain{
-		conn:      conn,
-		database:  db,
-		minerData: localMD,
+		conn:     conn,
+		database: db,
 	}
-	_ = mc.conn.SetDeadline(time.Time{})
 	return mc
-}
-
-func minerKey(mid account.ID, poolAddr common.Address) []byte {
-	return []byte(fmt.Sprintf(DBKeyMinerData, SysConf.MicroPaySys.String(), mid.String(), poolAddr.String()))
 }
 
 func (mc *MicChain) Sync(sig chan struct{}) {
@@ -126,11 +94,6 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 
 		chainLog.Notice(r.String())
 
-		if mc.minerData.LastMicNonce >= r.Nonce {
-			log.Warn("outdated receipt data")
-			continue
-		}
-
 		if err := mc.BucketManager.RechargeBucket(r); err != nil {
 			log.Warn("recharge err:", err)
 			continue
@@ -140,8 +103,5 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 }
 
 func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
-	_ = com.SaveJsonObj(mc.database, r.RKey(SysConf.MicroPaySys), r)
-	mc.minerData.LastMicNonce = r.Nonce
-	mc.minerData.PackMined = mc.minerData.PackMined.Add(mc.minerData.PackMined, r.Amount)
-	_ = com.SaveJsonObj(mc.database, minerKey(r.Miner, r.To), mc.minerData)
+	//TODO::make a Merckle tree
 }

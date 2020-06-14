@@ -21,14 +21,18 @@ endif
 .SECONDEXPANSION:
 
 .PHONY: all
+.PHONY: pbs
 .PHONY: test
 
 BINDIR=$(INCLUDE)/bin
 
-all: build
+all: pbs build
 
 build:
 	GOOS=$(OS) GOARCH=amd64 $(GOBUILD) -o $(BINDIR)/$(NAME)
+
+pbs:
+	cd pbs/ && $(MAKE)
 
 mac:
 	GOOS=darwin go build -ldflags '-w -s' -o $(BINDIR)/$(NAME)

@@ -4,8 +4,12 @@ import (
 	"fmt"
 	com "github.com/hyperorchid/go-miner-pool/common"
 	"github.com/hyperorchid/go-miner/node"
+	"github.com/hyperorchid/go-miner/pbs"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -14,9 +18,11 @@ import (
 
 var param struct {
 	version  bool
+	CMDPort  string
 	password string
 	minerIP  string
 	basIP    string
+	user     string
 }
 
 var rootCmd = &cobra.Command{
@@ -37,14 +43,15 @@ func init() {
 	rootCmd.Flags().StringVarP(&param.password, "password",
 		"p", "", "Password to unlock miner")
 
+	rootCmd.Flags().StringVarP(&param.CMDPort, "cmdPort",
+		"c", "42017", "Cmd service port")
+
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
 		"b", "167.179.112.108", "Bas IP")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
-	rootCmd.AddCommand(ShowCmd)
-	ShowCmd.AddCommand(ShowAddrCmd)
 }
 
 func main() {
@@ -56,7 +63,7 @@ func main() {
 
 func mainRun(_ *cobra.Command, _ []string) {
 
-	node.InitMinerNode(param.password)
+	node.InitMinerNode(param.password, param.CMDPort)
 
 	n := node.SrvNode()
 	com.NewThreadWithID("[TCP Service Thread]", n.Mining, func(err interface{}) {
@@ -66,6 +73,12 @@ func mainRun(_ *cobra.Command, _ []string) {
 	c := node.Chain()
 	c.BucketManager = n
 	com.NewThreadWithID("[Micro Chain Sync Thread]", c.Sync, func(err interface{}) {
+		panic(err)
+	}).Start()
+
+	com.NewThreadWithID("[Cmd Service Thread]", func(c chan struct{}) {
+		StartCmdService()
+	}, func(err interface{}) {
 		panic(err)
 	}).Start()
 
@@ -93,4 +106,35 @@ func waitSignal(done chan bool) {
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true
+}
+
+type cmdService struct{}
+
+func StartCmdService() {
+	address := net.JoinHostPort("127.0.0.1", node.CMDServicePort)
+	l, err := net.Listen("tcp", address)
+	if err != nil {
+		panic(err)
+	}
+
+	cmdServer := grpc.NewServer()
+
+	pbs.RegisterCmdServiceServer(cmdServer, &cmdService{})
+
+	reflection.Register(cmdServer)
+	if err := cmdServer.Serve(l); err != nil {
+		panic(err)
+	}
+}
+
+func DialToCmdService() pbs.CmdServiceClient {
+	var address = "127.0.0.1:" + node.CMDServicePort
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		panic(err)
+	}
+
+	client := pbs.NewCmdServiceClient(conn)
+
+	return client
 }

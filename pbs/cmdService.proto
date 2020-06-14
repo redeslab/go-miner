@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pbs;
+
+service CmdService {
+    rpc ShowUserCounter (UserCounterReq) returns (CounterResult) {}
+    rpc SetLogLevel (LogLevel) returns (CommonResponse) {}
+}
+
+message UserCounterReq {
+    string User = 1;
+}
+
+message CounterResult {
+    int32 id = 1;
+    int32 bucket = 2;
+}
+
+message CommonResponse {
+    string msg = 1;
+}
+
+message LogLevel{
+    string Module = 1;
+    int32  Level  = 2;
+}
