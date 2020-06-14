@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/hyperorchid/go-miner-pool/account"
 	"github.com/hyperorchid/go-miner-pool/network"
 )
@@ -27,14 +28,15 @@ func (sr *SetupReq) Verify() bool {
 }
 
 func (sr *SetupReq) String() string {
+
 	return fmt.Sprintf("\n@@@@@@@@@@@@@@@@@@@[Setup Request]@@@@@@@@@@@@@@@@@"+
 		"\nSig:\t%s"+
 		"\nIV:\t%s"+
 		"\nMainAddr:\t%s"+
 		"\nSubAddr:\t%s"+
 		"\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-		string(sr.Sig),
-		string(sr.IV[:]),
+		hexutil.Encode(sr.Sig),
+		hexutil.Encode(sr.IV[:]),
 		sr.MainAddr.String(),
 		sr.SubAddr.String())
 }

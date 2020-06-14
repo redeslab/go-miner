@@ -99,6 +99,8 @@ func (n *Node) Stop() {
 	_ = n.srvConn.Close()
 }
 
+const BUFFER_SIZE = 1 << 20
+
 func (n *Node) newWorker(conn net.Conn) {
 	log.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
@@ -109,6 +111,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 
 	if !req.Verify() {
+		nodeLog.Warning(req.String())
 		panic("request signature failed")
 	}
 	jsonConn.WriteAck(nil)
@@ -142,14 +145,16 @@ func (n *Node) newWorker(conn net.Conn) {
 
 	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
 	com.NewThread(func(sig chan struct{}) {
-		buffer := make([]byte, 40960)
+		buffer := make([]byte, BUFFER_SIZE)
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
+				//nodeLog.Noticef("Client->Proxy read err:%s", err)
 				panic(err)
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
+				//nodeLog.Noticef("Proxy->Target write err:%s", err)
 				panic(err)
 			}
 		}
@@ -157,14 +162,16 @@ func (n *Node) newWorker(conn net.Conn) {
 		_ = tgtConn.Close()
 	}).Start()
 
-	buffer := make([]byte, 40960)
+	buffer := make([]byte, BUFFER_SIZE)
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
+			//nodeLog.Noticef("Target->Proxy read err:%s", err)
 			panic(err)
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
+			//nodeLog.Noticef("Proxy->Client read err:%s", err)
 			panic(err)
 		}
 	}
