@@ -99,6 +99,8 @@ func (n *Node) Stop() {
 	_ = n.srvConn.Close()
 }
 
+const BUFFER_SIZE = 1 << 20
+
 func (n *Node) newWorker(conn net.Conn) {
 	log.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
@@ -109,6 +111,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 
 	if !req.Verify() {
+		nodeLog.Warning(req.String())
 		panic("request signature failed")
 	}
 	jsonConn.WriteAck(nil)
@@ -146,25 +149,28 @@ func (n *Node) newWorker(conn net.Conn) {
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
+				//nodeLog.Noticef("Client->Proxy read err:%s", err)
 				panic(err)
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
+				//nodeLog.Noticef("Proxy->Target write err:%s", err)
 				panic(err)
 			}
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
 	}).Start()
-
 	buffer := make([]byte, ConnectionBufSize)
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
+			//nodeLog.Noticef("Target->Proxy read err:%s", err)
 			panic(err)
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
+			//nodeLog.Noticef("Proxy->Client read err:%s", err)
 			panic(err)
 		}
 	}
