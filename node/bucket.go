@@ -3,7 +3,7 @@ package node
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/hyperorchid/go-miner-pool/microchain"
+	"github.com/hyperorchidlab/go-miner-pool/microchain"
 	"sync"
 	"time"
 )

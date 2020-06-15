@@ -3,7 +3,7 @@ package node
 import (
 	"encoding/json"
 	"fmt"
-	com "github.com/hyperorchid/go-miner-pool/common"
+	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"

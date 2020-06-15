@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/hyperorchid/go-miner-pool/account"
+	"github.com/hyperorchidlab/go-miner-pool/account"
 	"sync"
 )
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	com "github.com/hyperorchid/go-miner-pool/common"
-	"github.com/hyperorchid/go-miner/node"
-	"github.com/hyperorchid/go-miner/pbs"
+	com "github.com/hyperorchidlab/go-miner-pool/common"
+	"github.com/hyperorchidlab/go-miner/node"
+	"github.com/hyperorchidlab/go-miner/pbs"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

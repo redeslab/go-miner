@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/hyperorchid/go-miner-pool/account"
-	"github.com/hyperorchid/go-miner-pool/network"
+	"github.com/hyperorchidlab/go-miner-pool/account"
+	"github.com/hyperorchidlab/go-miner-pool/network"
 )
 
 type SetupData struct {

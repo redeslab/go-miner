@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package pbs;
+option go_package = ".;pbs";
 
 service CmdService {
     rpc ShowUserCounter (UserCounterReq) returns (CounterResult) {}
