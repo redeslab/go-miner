@@ -12,7 +12,7 @@ const (
 	InitBucketSize     = 1 << 24 //16M
 	RechargePieceSize  = 1 << 22 //4M
 	MaxLostRechargeReq = 2
-	ConnectionBufSize  = 1 << 18
+	ConnectionBufSize  = 1 << 20
 )
 
 var (
