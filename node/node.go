@@ -106,7 +106,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
 	jsonConn := &network.JsonConn{Conn: conn}
 	req := &SetupReq{}
-	if err := jsonConn.ReadJsonMsg(req); err != nil {
+	if err := jsonConn.ReadJsonMsgTCP(req); err != nil {
 		panic(err)
 	}
 
@@ -114,7 +114,7 @@ func (n *Node) newWorker(conn net.Conn) {
 		nodeLog.Warning(req.String())
 		panic("request signature failed")
 	}
-	jsonConn.WriteAck(nil)
+	jsonConn.WriteAckTCP(nil)
 
 	var aesKey account.PipeCryptKey
 	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
@@ -127,7 +127,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 	jsonConn = &network.JsonConn{Conn: aesConn}
 	prob := &ProbeReq{}
-	if err := jsonConn.ReadJsonMsg(prob); err != nil {
+	if err := jsonConn.ReadJsonMsgTCP(prob); err != nil {
 		panic(err)
 	}
 
@@ -138,7 +138,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 	_ = tgtConn.(*net.TCPConn).SetKeepAlive(true)
 
-	jsonConn.WriteAck(nil)
+	jsonConn.WriteAckTCP(nil)
 
 	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
