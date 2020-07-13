@@ -127,7 +127,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 	jsonConn = &network.JsonConn{Conn: aesConn}
 	prob := &ProbeReq{}
-	if err := jsonConn.ReadJsonMsgTCP(prob); err != nil {
+	if err := jsonConn.ReadJsonMsg(prob); err != nil {
 		panic(err)
 	}
 
@@ -138,7 +138,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 	_ = tgtConn.(*net.TCPConn).SetKeepAlive(true)
 
-	jsonConn.WriteAckTCP(nil)
+	jsonConn.WriteAck(nil)
 
 	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
