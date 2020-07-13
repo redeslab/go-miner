@@ -104,9 +104,10 @@ const BUFFER_SIZE = 1 << 20
 func (n *Node) newWorker(conn net.Conn) {
 	log.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
-	jsonConn := &network.JsonConn{Conn: conn}
+	lvConn := network.NewLVConn(conn)
+	jsonConn := &network.JsonConn{Conn: lvConn}
 	req := &SetupReq{}
-	if err := jsonConn.ReadJsonMsgTCP(req); err != nil {
+	if err := jsonConn.ReadJsonMsg(req); err != nil {
 		panic(err)
 	}
 
@@ -114,13 +115,12 @@ func (n *Node) newWorker(conn net.Conn) {
 		nodeLog.Warning(req.String())
 		panic("request signature failed")
 	}
-	jsonConn.WriteAckTCP(nil)
+	jsonConn.WriteAck(nil)
 
 	var aesKey account.PipeCryptKey
 	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
 		panic(err)
 	}
-	lvConn := network.NewLVConn(conn)
 	aesConn, err := network.NewAesConn(lvConn, aesKey[:], req.IV)
 	if err != nil {
 		panic(err)
