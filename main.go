@@ -16,6 +16,9 @@ import (
 	"syscall"
 )
 
+
+var hopVersion string = "0.2"
+
 var param struct {
 	version  bool
 	CMDPort  string
@@ -23,6 +26,7 @@ var param struct {
 	minerIP  string
 	basIP    string
 	user     string
+	location string
 }
 
 var rootCmd = &cobra.Command{
@@ -59,6 +63,11 @@ func main() {
 }
 
 func mainRun(_ *cobra.Command, _ []string) {
+
+	if param.version {
+		fmt.Println("Hop version: ", hopVersion)
+		return
+	}
 
 	node.InitMinerNode(param.password, param.CMDPort)
 

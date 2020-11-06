@@ -46,3 +46,7 @@ func QueryMinerData(subAddr account.ID) (*eth.MinerData, error) {
 
 	return miner, nil
 }
+
+//func QueryMinerData2(subAddr account.ID) (*eth.MinerData, error)  {
+//
+//}
