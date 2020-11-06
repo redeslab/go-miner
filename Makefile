@@ -35,7 +35,13 @@ pbs:
 	cd pbs/ && $(MAKE)
 
 mac:
-	GOOS=darwin go build -ldflags '-w -s' -o $(BINDIR)/$(NAME)
+	GOOS=darwin go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).mac
+arm:
+	GOOS=linux GOARM=7 GOARCH=arm go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).arm
+linux:
+	GOOS=linux GOARCH=amd64 go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).lnx
+win:
+	GOOS=windows GOARCH=amd64 go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).exe
 
 clean:
 	rm $(BINDIR)/$(NAME)

@@ -23,6 +23,7 @@ var param struct {
 	minerIP  string
 	basIP    string
 	user     string
+	location string
 }
 
 var rootCmd = &cobra.Command{
@@ -103,6 +104,7 @@ func waitSignal(done chan bool) {
 	sig := <-sigCh
 
 	node.SrvNode().Stop()
+	node.Chain().Close()
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true

@@ -37,16 +37,7 @@ func Chain() *MicChain {
 }
 
 func newChain() *MicChain {
-	opts := opt.Options{
-		Strict:      opt.DefaultStrict,
-		Compression: opt.NoCompression,
-		Filter:      filter.NewBloomFilter(10),
-	}
 
-	db, err := leveldb.OpenFile(PathSetting.DBPath, &opts)
-	if err != nil {
-		panic(err)
-	}
 	minerID := WInst().SubAddress()
 	md, err := QueryMinerData(minerID)
 	if err != nil {
@@ -108,6 +99,13 @@ func (mc *MicChain) KeepAlive(sig chan struct{}) {
 				panic(err) //TODO:: try to join pool again
 			}
 		}
+	}
+}
+
+func (mc *MicChain) Close() {
+	if mc.database != nil {
+		mc.database.Close()
+		mc.database = nil
 	}
 }
 

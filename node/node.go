@@ -1,14 +1,19 @@
 package node
 
 import (
-	"encoding/json"
+
 	"fmt"
+	"github.com/btcsuite/goleveldb/leveldb"
+	"github.com/btcsuite/goleveldb/leveldb/filter"
+	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
+	basc "github.com/hyperorchidlab/BAS/client"
 	"github.com/hyperorchidlab/go-miner-pool/account"
 	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"github.com/hyperorchidlab/go-miner-pool/microchain"
 	"github.com/hyperorchidlab/go-miner-pool/network"
+	"github.com/hyperorchidlab/pirate_contract/config"
 	"github.com/op/go-logging"
 	"net"
 	"sync"
@@ -22,9 +27,16 @@ var (
 
 type Node struct {
 	subAddr account.ID
+	poolAddr common.Address
+	poolNetAddr string
+	poolConn *net.TCPConn
+	poolChan chan *microchain.MinerMicroTx
+	refuseTag bool
 	srvConn net.Listener
-	pingSrv *net.UDPConn
+	ctrlChan *network.JsonConn
 	buckets *BucketMap
+	database *leveldb.DB
+	uam *UserAccountMgmt
 }
 
 func SrvNode() *Node {
@@ -36,6 +48,27 @@ func SrvNode() *Node {
 
 func newNode() *Node {
 	sa := WInst().SubAddress()
+
+	cfg:=&config.PlatEthConfig{
+		EthConfig:config.EthConfig{Market: SysConf.MicroPaySys,NetworkID: SysConf.NetworkID,EthApiUrl: SysConf.EthApiUrl,Token: SysConf.Token},
+	}
+
+	pool,err:=GetPoolAddr(sa.ToArray(),cfg)
+	if err!=nil{
+		panic(err)
+	}
+
+	opts := opt.Options{
+		Strict:      opt.DefaultStrict,
+		Compression: opt.NoCompression,
+		Filter:      filter.NewBloomFilter(10),
+	}
+
+	db, err := leveldb.OpenFile(PathSetting.DBPath, &opts)
+	if err != nil {
+		panic(err)
+	}
+
 	c, err := net.Listen("tcp", fmt.Sprintf(":%d", sa.ToServerPort()))
 	if err != nil {
 		panic(err)
@@ -45,11 +78,34 @@ func newNode() *Node {
 		panic(err)
 	}
 
+	bc:=basc.NewBasCli(SysConf.BAS)
+	naddr,err:=bc.Query((*pool)[:])
+	if err!=nil{
+		panic(err)
+	}
+	ip:=net.ParseIP(string(naddr.NetAddr))
+	if ip.Equal(net.IPv4zero){
+		panic("pool ip address error:"+string(naddr.NetAddr))
+	}
+
+	//raddr:=net.TCPAddr{IP:net.ParseIP(string(naddr.NetAddr)),Port: com.SyncPort}
+	//
+	//conn,err:=net.DialTCP("tcp",nil,raddr)
+	//if err!=nil{
+	//	panic(err)
+	//}
+	uam:=NewUserAccMgmt(db)
+
 	n := &Node{
 		subAddr: sa,
+		poolAddr: *pool,
+		poolNetAddr: string(naddr.NetAddr),
+		poolChan: make(chan *microchain.MinerMicroTx,1024),
 		srvConn: c,
-		pingSrv: p,
+		ctrlChan: &network.JsonConn{Conn:p},
 		buckets: newBucketMap(),
+		database: db,
+		uam: uam,
 	}
 
 	com.NewThreadWithID("[UDP Test Thread]", n.TestService, func(err interface{}) {
@@ -62,19 +118,33 @@ func newNode() *Node {
 	return n
 }
 
+func (n *Node)ctrlChanRecv(req *MsgReq) *MsgAck  {
+	ack:=&MsgAck{}
+	ack.Typ = req.Typ
+	ack.Msg = "failure"
+	ack.Code = 1
+	switch req.Typ {
+	case MsgDeliverMicroTx:
+
+	case MsgSyncMicroTx:
+
+	case MsgPingTest:
+
+	}
+
+	return ack
+}
+
 func (n *Node) TestService(sig chan struct{}) {
-	buffer := make([]byte, 1024)
 	for {
-		_, a, e := n.pingSrv.ReadFromUDP(buffer)
-		if e != nil {
-			log.Warn("Test Ping:", e)
+		req:=&MsgReq{}
+		err := n.ctrlChan.ReadJsonMsg(req)
+		if err != nil {
+			log.Warn("control channel error ", err)
 			continue
 		}
-		data, _ := json.Marshal(network.ACK{
-			Success: true,
-			Message: "",
-		})
-		_, _ = n.pingSrv.WriteToUDP(data, a)
+		data := n.ctrlChanRecv(req)
+		n.ctrlChan.WriteJsonMsg(data)
 	}
 }
 
@@ -97,6 +167,11 @@ func (n *Node) Mining(sig chan struct{}) {
 
 func (n *Node) Stop() {
 	_ = n.srvConn.Close()
+	if n.poolConn!= nil{
+		n.poolConn.Close()
+	}
+
+	n.database.Close()
 }
 
 const BUFFER_SIZE = 1 << 20
