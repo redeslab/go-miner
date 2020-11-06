@@ -50,8 +50,8 @@ func WalletDir(base string) string {
 	return filepath.Join(base, string(filepath.Separator), WalletFile)
 }
 
-func MinerConfFile(bas string) string  {
-	return filepath.Join(bas,string(filepath.Separator),ConfFile)
+func MinerConfFile(bas string) string {
+	return filepath.Join(bas, string(filepath.Separator), ConfFile)
 }
 
 func (pc *PathConf) String() string {

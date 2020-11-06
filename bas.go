@@ -30,7 +30,7 @@ func init() {
 	BasCmd.Flags().StringVarP(&param.basIP, "basIP",
 		"b", "", "HOP bas -b [BAS IP]]")
 
-	BasCmd.Flags().StringVarP(&param.location, "location","l","","set miner location")
+	BasCmd.Flags().StringVarP(&param.location, "location", "l", "", "set miner location")
 
 }
 
@@ -47,7 +47,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		panic(e)
 	}
 
-	if param.location == "" || len(param.location)>8{
+	if param.location == "" || len(param.location) > 8 {
 		fmt.Println("please set miner location, and not more than 8 bytes")
 		return
 	}
@@ -57,9 +57,9 @@ func basReg(_ *cobra.Command, _ []string) {
 	extData.MainAddr = node.WInst().MainAddress().String()
 	extData.Location = param.location
 
-	basip:=param.basIP
+	basip := param.basIP
 
-	if basip == ""{
+	if basip == "" {
 		node.PathSetting.ConfPath = node.MinerConfFile(node.BaseDir())
 		jsonStr, err := ioutil.ReadFile(node.PathSetting.ConfPath)
 		if err != nil {
@@ -70,7 +70,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		}
 
 		basip = node.SysConf.BAS
-		if net.ParseIP(basip) == nil{
+		if net.ParseIP(basip) == nil {
 			panic("bas ip from config file error")
 		}
 
@@ -78,13 +78,13 @@ func basReg(_ *cobra.Command, _ []string) {
 
 	req := &dbSrv.RegRequest{
 		BlockAddr: []byte(extData.HopAddr),
-		SignData:dbSrv.SignData{
-			NetworkAddr:&dbSrv.NetworkAddr{
+		SignData: dbSrv.SignData{
+			NetworkAddr: &dbSrv.NetworkAddr{
 				NTyp:    t,
 				NetAddr: []byte(param.minerIP),
 				BTyp:    crypto.HOP,
 			},
-			ExtData:extData.Marshal(),
+			ExtData: extData.Marshal(),
 		},
 	}
 

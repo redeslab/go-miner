@@ -9,8 +9,7 @@ import (
 	"github.com/hyperorchidlab/go-miner-pool/network"
 )
 
-
-const(
+const (
 	MsgDeliverMicroTx int = iota
 	MsgSyncMicroTx
 	MsgPingTest
@@ -54,19 +53,19 @@ type PingTest struct {
 }
 
 type MsgReq struct {
-	Typ int `json:"typ"`
-	SMT *SyncMicroTx `json:"smt,omitempty"`
-	TX *microchain.MicroTX `json:"tx,omitempty"`
-	PT *PingTest `json:"pt,omitempty"`
+	Typ int                 `json:"typ"`
+	SMT *SyncMicroTx        `json:"smt,omitempty"`
+	TX  *microchain.MicroTX `json:"tx,omitempty"`
+	PT  *PingTest           `json:"pt,omitempty"`
 }
 
 type SyncMicroTx struct {
-	User common.Address  `json:"user"`
+	User common.Address `json:"user"`
 }
 
 type MsgAck struct {
-	Typ  int `json:"typ"`
-	Code int `json:"code"`		//0 success 1 failure
-	Msg  string `json:"msg"`
-	Data interface{}  `json:"data"`
+	Typ  int         `json:"typ"`
+	Code int         `json:"code"` //0 success 1 failure
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
 }

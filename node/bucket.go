@@ -20,7 +20,7 @@ var (
 )
 
 type BucketManager interface {
-	RechargeBucket(*microchain.Receipt) error
+	RechargeBucket(tx *microchain.MicroTX) error
 }
 
 type BucketMap struct {

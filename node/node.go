@@ -1,7 +1,8 @@
 package node
 
 import (
-
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/filter"
@@ -26,17 +27,17 @@ var (
 )
 
 type Node struct {
-	subAddr account.ID
-	poolAddr common.Address
+	subAddr     account.ID
+	poolAddr    common.Address
 	poolNetAddr string
-	poolConn *net.TCPConn
-	poolChan chan *microchain.MinerMicroTx
-	refuseTag bool
-	srvConn net.Listener
-	ctrlChan *network.JsonConn
-	buckets *BucketMap
-	database *leveldb.DB
-	uam *UserAccountMgmt
+	poolConn    *net.UDPConn
+	poolChan    chan *microchain.MinerMicroTx
+	srvConn     net.Listener
+	ctrlChan    *network.JsonConn
+	buckets     *BucketMap
+	database    *leveldb.DB
+	uam         *UserAccountMgmt
+	quit        chan struct{}
 }
 
 func SrvNode() *Node {
@@ -49,12 +50,12 @@ func SrvNode() *Node {
 func newNode() *Node {
 	sa := WInst().SubAddress()
 
-	cfg:=&config.PlatEthConfig{
-		EthConfig:config.EthConfig{Market: SysConf.MicroPaySys,NetworkID: SysConf.NetworkID,EthApiUrl: SysConf.EthApiUrl,Token: SysConf.Token},
+	cfg := &config.PlatEthConfig{
+		EthConfig: config.EthConfig{Market: SysConf.MicroPaySys, NetworkID: SysConf.NetworkID, EthApiUrl: SysConf.EthApiUrl, Token: SysConf.Token},
 	}
 
-	pool,err:=GetPoolAddr(sa.ToArray(),cfg)
-	if err!=nil{
+	pool, err := GetPoolAddr(sa.ToArray(), cfg)
+	if err != nil {
 		panic(err)
 	}
 
@@ -78,37 +79,37 @@ func newNode() *Node {
 		panic(err)
 	}
 
-	bc:=basc.NewBasCli(SysConf.BAS)
-	naddr,err:=bc.Query((*pool)[:])
-	if err!=nil{
+	bc := basc.NewBasCli(SysConf.BAS)
+	naddr, err := bc.Query((*pool)[:])
+	if err != nil {
 		panic(err)
 	}
-	ip:=net.ParseIP(string(naddr.NetAddr))
-	if ip.Equal(net.IPv4zero){
-		panic("pool ip address error:"+string(naddr.NetAddr))
+	ip := net.ParseIP(string(naddr.NetAddr))
+	if ip.Equal(net.IPv4zero) {
+		panic("pool ip address error:" + string(naddr.NetAddr))
 	}
 
-	//raddr:=net.TCPAddr{IP:net.ParseIP(string(naddr.NetAddr)),Port: com.SyncPort}
-	//
-	//conn,err:=net.DialTCP("tcp",nil,raddr)
-	//if err!=nil{
-	//	panic(err)
-	//}
-	uam:=NewUserAccMgmt(db)
+	uam := NewUserAccMgmt(db, *pool)
+	uam.loadFromDB()
 
 	n := &Node{
-		subAddr: sa,
-		poolAddr: *pool,
+		subAddr:     sa,
+		poolAddr:    *pool,
 		poolNetAddr: string(naddr.NetAddr),
-		poolChan: make(chan *microchain.MinerMicroTx,1024),
-		srvConn: c,
-		ctrlChan: &network.JsonConn{Conn:p},
-		buckets: newBucketMap(),
-		database: db,
-		uam: uam,
+		poolChan:    make(chan *microchain.MinerMicroTx, 1024),
+		srvConn:     c,
+		ctrlChan:    &network.JsonConn{Conn: p},
+		buckets:     newBucketMap(),
+		database:    db,
+		uam:         uam,
+		quit:        make(chan struct{}, 16),
 	}
 
-	com.NewThreadWithID("[UDP Test Thread]", n.TestService, func(err interface{}) {
+	com.NewThreadWithID("[report thread]", n.ReportTx, func(err interface{}) {
+		panic(err)
+	}).Start()
+
+	com.NewThreadWithID("[UDP Test Thread]", n.CtrlService, func(err interface{}) {
 		panic(err)
 	}).Start()
 
@@ -118,26 +119,157 @@ func newNode() *Node {
 	return n
 }
 
-func (n *Node)ctrlChanRecv(req *MsgReq) *MsgAck  {
-	ack:=&MsgAck{}
+func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, error) {
+	if n.poolConn == nil {
+		raddr := &net.UDPAddr{IP: net.ParseIP(n.poolNetAddr), Port: com.TxReceivePort}
+		udpc, err := net.DialUDP("udp", nil, raddr)
+		if err != nil {
+			return nil, err
+		}
+		n.poolConn = udpc
+	}
+	j, _ := json.Marshal(*tx)
+	nw, err := n.poolConn.Write(j)
+	if err != nil || nw != len(j) {
+		return nil, err
+	}
+
+	ack := &microchain.PoolTxAck{}
+	ptx := &microchain.PoolMicroTx{}
+	ack.Data = ptx
+
+	buf := make([]byte, 10240)
+	_, e := n.poolConn.Read(buf)
+	if e != nil {
+		return nil, e
+	}
+
+	err = json.Unmarshal(buf, ack)
+	if err != nil {
+		return nil, err
+	}
+
+	if ack.Code == 0 {
+		return ptx, nil
+	}
+
+	return nil, errors.New(ack.Msg)
+
+}
+
+func (n *Node) ReportTx(sig chan struct{}) {
+	for {
+		select {
+		case tx := <-n.poolChan:
+			ua := n.uam.getUserAcc(tx.User)
+			if ua == nil {
+				panic("unexpected no user account in mem")
+			}
+			if ptx, err := n.reportTx(tx); err == nil {
+				dbtx := &microchain.DBMicroTx{TokenBalance: ua.TokenBalance, TrafficBalance: ua.TrafficBalance, PoolMicroTx: *ptx}
+				if err := n.uam.savePoolMinerMicroTx(dbtx); err != nil {
+					nodeLog.Warning("save dbtx error" + dbtx.String())
+				}
+			} else {
+				n.uam.refuse(tx.User)
+			}
+
+		case <-n.quit:
+			return
+		}
+	}
+}
+
+func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
+	ack := &MsgAck{}
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
+
 	switch req.Typ {
 	case MsgDeliverMicroTx:
+		if req.TX == nil {
+			return ack
+		}
+		if m, err := n.uam.dbGetMinerMicroTx(req.TX); err == nil {
+			ack.Data = m
+			ack.Msg = "success"
+			ack.Code = 0
+			break
+		}
+		if b := n.uam.checkMicroTx(req.TX); !b {
+			return ack
+		}
+		var (
+			sig []byte
+			err error
+		)
+		if sig, err = WInst().SignJson(*req.TX); err != nil {
+			return ack
+		}
+		mtx := &microchain.MinerMicroTx{
+			MinerSig: sig,
+			MicroTX:  req.TX,
+		}
+		err = n.uam.saveUserMinerMicroTx(mtx)
+		if err != nil {
+			return ack
+		}
 
+		n.poolChan <- mtx
+		n.uam.updateByMicroTx(req.TX)
+		n.RechargeBucket(req.TX)
+		ack.Data = mtx
+		ack.Code = 0
+		ack.Msg = "success"
 	case MsgSyncMicroTx:
+		if req.SMT == nil {
+			return ack
+		}
+
+		tx, f, err := n.SyncMicro(req.SMT.User)
+		if err != nil {
+			return ack
+		}
+
+		if f {
+			n.uam.resetCredit(req.SMT.User, tx.MinerCredit)
+			ack.Data = tx.MinerMicroTx
+		}
+
+		sua, f, e := n.SyncUa(req.SMT.User)
+		if e != nil {
+			return ack
+		}
+
+		if f {
+			n.uam.resetFromPool(req.SMT.User, sua)
+		}
+
+		if ack.Data == nil {
+			dbtx := n.uam.getLatestMicroTx(req.SMT.User)
+			if dbtx != nil {
+				ack.Data = dbtx.MinerMicroTx
+			} else {
+				ack.Code = 2
+			}
+		}
+		if ack.Data != nil {
+			ack.Code = 0
+			ack.Msg = "success"
+		}
 
 	case MsgPingTest:
-
+		ack.Code = 0
+		ack.Msg = "success"
 	}
 
 	return ack
 }
 
-func (n *Node) TestService(sig chan struct{}) {
+func (n *Node) CtrlService(sig chan struct{}) {
 	for {
-		req:=&MsgReq{}
+		req := &MsgReq{}
 		err := n.ctrlChan.ReadJsonMsg(req)
 		if err != nil {
 			log.Warn("control channel error ", err)
@@ -167,11 +299,12 @@ func (n *Node) Mining(sig chan struct{}) {
 
 func (n *Node) Stop() {
 	_ = n.srvConn.Close()
-	if n.poolConn!= nil{
+	if n.poolConn != nil {
 		n.poolConn.Close()
 	}
 
 	n.database.Close()
+	close(n.quit)
 }
 
 const BUFFER_SIZE = 1 << 20
@@ -251,17 +384,103 @@ func (n *Node) newWorker(conn net.Conn) {
 	}
 }
 
-func (n *Node) RechargeBucket(r *microchain.Receipt) error {
-	b := n.buckets.getBucket(r.From)
+func (n *Node) RechargeBucket(r *microchain.MicroTX) error {
+	b := n.buckets.getBucket(r.User)
 	if b == nil {
-		return fmt.Errorf("no such user[%s] right now", r.From)
+		return fmt.Errorf("no such user[%s] right now", r.User)
 	}
 
-	b.Recharge(int(r.Amount.Int64()))
+	b.Recharge(int(r.MinerAmount.Int64()))
 	return nil
 }
 
 func (n *Node) ShowUserBucket(user string) *Bucket {
 	return n.buckets.getBucket(common.HexToAddress(user))
 
+}
+
+func (n *Node) dialPoolConn() (*net.TCPConn, error) {
+	raddr := &net.TCPAddr{IP: net.ParseIP(string(n.poolNetAddr)), Port: com.SyncPort}
+
+	conn, err := net.DialTCP("tcp", nil, raddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bool, err error) {
+	conn, err := n.dialPoolConn()
+	if err != nil {
+		panic(err)
+	}
+
+	defer conn.Close()
+
+	lvconn := &network.LVConn{Conn: conn}
+	jconn := &network.JsonConn{lvconn}
+
+	sr := &microchain.SyncReq{}
+	sr.Typ = microchain.RecoverMinerMicroTx
+	sr.Miner = n.subAddr.ToArray()
+	sr.UserAddr = user
+
+	err = jconn.WriteJsonMsg(*sr)
+	if err != nil {
+		return nil, find, err
+	}
+
+	ptx := &microchain.DBMicroTx{}
+	r := &microchain.SyncResp{}
+	r.Data = ptx
+
+	err = jconn.ReadJsonMsg(r)
+	if err != nil {
+		return nil, find, err
+	}
+
+	if r.Code == 0 {
+		find = true
+	}
+
+	return ptx, find, nil
+}
+
+func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, err error) {
+	conn, err := n.dialPoolConn()
+	if err != nil {
+		panic(err)
+	}
+
+	defer conn.Close()
+
+	lvconn := &network.LVConn{Conn: conn}
+	jconn := &network.JsonConn{lvconn}
+
+	sr := &microchain.SyncReq{}
+	sr.Typ = microchain.SyncUserACC
+	//sr.Miner = n.subAddr.ToArray()
+	sr.UserAddr = user
+
+	err = jconn.WriteJsonMsg(*sr)
+	if err != nil {
+		return nil, find, err
+	}
+
+	ua = &microchain.SyncUA{}
+
+	r := &microchain.SyncResp{}
+	r.Data = ua
+
+	err = jconn.ReadJsonMsg(r)
+	if err != nil {
+		return nil, find, err
+	}
+
+	if r.Code == 0 {
+		find = true
+	}
+
+	return ua, find, nil
 }

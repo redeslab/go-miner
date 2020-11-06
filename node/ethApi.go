@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperorchidlab/pirate_contract/config"
 )
+
 //
 //func connect() (*generated.MicroPaySystem, error) {
 //	conn, err := ethclient.Dial(SysConf.EthApiUrl)
@@ -48,42 +49,42 @@ import (
 //
 //
 
-func GetPoolAddr(miner [32]byte,cfg *config.PlatEthConfig) (addr *common.Address,err error)  {
-	if cfg == nil{
-		return nil,errors.New("eth config error")
+func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Address, err error) {
+	if cfg == nil {
+		return nil, errors.New("eth config error")
 	}
 
-	mc,err:=cfg.NewClient()
-	if err!=nil{
-		return nil,err
+	mc, err := cfg.NewClient()
+	if err != nil {
+		return nil, err
 	}
 	defer mc.Close()
 
 	var ms [][32]byte
-	ms = append(ms,miner)
+	ms = append(ms, miner)
 
-	iter,err:=mc.FilterMinerEvent(nil,ms,nil)
-	if err!=nil{
-		return nil,err
+	iter, err := mc.FilterMinerEvent(nil, ms, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	var pool *common.Address
 
-	for iter.Next(){
-		ev:=iter.Event
-		if ev.EventType == 0{
+	for iter.Next() {
+		ev := iter.Event
+		if ev.EventType == 0 {
 			pool = &ev.Addr1
 		}
 
-		if ev.EventType == 1{
+		if ev.EventType == 1 {
 			pool = &ev.Addr2
 		}
 
-		if ev.EventType == 2{
+		if ev.EventType == 2 {
 			pool = nil
 		}
 	}
 
-	return pool,nil
+	return pool, nil
 
 }

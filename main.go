@@ -68,15 +68,6 @@ func mainRun(_ *cobra.Command, _ []string) {
 		panic(err)
 	}).Start()
 
-	c := node.Chain()
-	c.BucketManager = n
-	com.NewThreadWithID("[Micro Chain Sync Thread]", c.Sync, func(err interface{}) {
-		panic(err)
-	}).Start()
-	com.NewThreadWithID("[Micro Chain Keep Alive]", c.KeepAlive, func(err interface{}) {
-		panic(err)
-	}).Start()
-
 	com.NewThreadWithID("[Cmd Service Thread]", func(c chan struct{}) {
 		StartCmdService()
 	}, func(err interface{}) {
@@ -104,7 +95,6 @@ func waitSignal(done chan bool) {
 	sig := <-sigCh
 
 	node.SrvNode().Stop()
-	node.Chain().Close()
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true
