@@ -50,8 +50,9 @@ const (
 	DBUserMicroTXHead string = "DBUserMicroTx_%s_%s"        //market pool
 	DBUserMicroTxKey         = DBUserMicroTXHead + "_%s_%s" //user credit
 
-	DBPoolMicroTxHead string = "DBPoolMicroTx_%s_%s"        //market pool
-	DBPoolMicroTxKey         = DBPoolMicroTxHead + "_%s_%s" //user credit
+	DBPoolMicroTxHead          string = "DBPoolMicroTx_%s_%s"        //market pool
+	DBPoolMicroTxKey                  = DBPoolMicroTxHead + "_%s_%s" //user credit
+	DBPoolMicroTxKeyPatternEnd        = "DBPoolMicroTx_0xffffffffffffffffffff"
 )
 
 func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
@@ -173,7 +174,8 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 
 	ua, ok := uam.users[user]
 	if !ok {
-		return
+		ua := &UserAccount{}
+		uam.users[user] = ua
 	}
 	ua.MinerCredit = credit
 }
@@ -185,11 +187,13 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 
 	ua, ok := uam.users[user]
 	if !ok {
-		return
+		ua := &UserAccount{}
+		uam.users[user] = ua
 	}
 	ua.TotalTraffic = sua.UsedTraffic
 	ua.TokenBalance = sua.TokenBalance
 	ua.TrafficBalance = sua.TrafficBalance
+	ua.UptoPoolTraffic = sua.UsedTraffic
 	ua.PoolRefused = false
 
 }
@@ -261,7 +265,7 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 func (uam *UserAccountMgmt) loadFromDB() {
 	pattern := fmt.Sprintf(DBPoolMicroTxHead, SysConf.MicroPaySys.String(), uam.poolAddr.String())
 
-	r := &util.Range{Start: []byte(pattern)}
+	r := &util.Range{Start: []byte(pattern), Limit: []byte(DBPoolMicroTxKeyPatternEnd)}
 
 	iter := uam.database.NewIterator(r, nil)
 	for iter.Next() {

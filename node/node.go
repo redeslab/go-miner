@@ -131,6 +131,8 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
+		n.poolConn.Close()
+		n.poolConn = nil
 		return nil, err
 	}
 
@@ -141,6 +143,8 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	buf := make([]byte, 10240)
 	_, e := n.poolConn.Read(buf)
 	if e != nil {
+		n.poolConn.Close()
+		n.poolConn = nil
 		return nil, e
 	}
 

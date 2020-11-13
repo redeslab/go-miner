@@ -67,5 +67,5 @@ type MsgAck struct {
 	Typ  int         `json:"typ"`
 	Code int         `json:"code"` //0 success 1 failure
 	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+	Data interface{} `json:"data,omitempty"`
 }
