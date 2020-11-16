@@ -1,6 +1,7 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -52,6 +53,13 @@ type PingTest struct {
 	PayLoad string
 }
 
+func (pt *PingTest)String() string  {
+	if pt == nil{
+		return "PingTest is nil"
+	}
+	return fmt.Sprintf("PayLoad: %s",pt.PayLoad)
+}
+
 type MsgReq struct {
 	Typ int                 `json:"typ"`
 	SMT *SyncMicroTx        `json:"smt,omitempty"`
@@ -59,8 +67,23 @@ type MsgReq struct {
 	PT  *PingTest           `json:"pt,omitempty"`
 }
 
+func (mr *MsgReq)String() string  {
+	return fmt.Sprintf("type :%d\r\nSyncMicroTx: %s\r\nMicroTx: %sPingTest:%s\r\n",
+						mr.Typ,
+						mr.SMT.String(),
+						mr.TX.String(),
+						mr.PT.String())
+}
+
 type SyncMicroTx struct {
 	User common.Address `json:"user"`
+}
+
+func (sm *SyncMicroTx)String() string  {
+	if sm == nil{
+		return "SyncMicroTx is nil"
+	}
+	return fmt.Sprintf("User Address:%s",sm.User.String())
 }
 
 type MsgAck struct {
@@ -68,4 +91,16 @@ type MsgAck struct {
 	Code int         `json:"code"` //0 success 1 failure
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data,omitempty"`
+}
+
+func (ack *MsgAck)String() string  {
+	if ack == nil{
+		return "ack is nil"
+	}
+	j,err:=json.Marshal(*ack)
+	if err!=nil{
+		return err.Error()
+	}
+
+	return string(j)
 }

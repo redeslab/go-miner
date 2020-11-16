@@ -33,7 +33,7 @@ type Node struct {
 	poolConn    *net.UDPConn
 	poolChan    chan *microchain.MinerMicroTx
 	srvConn     net.Listener
-	ctrlChan    *network.JsonConn
+	ctrlChan    *net.UDPConn
 	buckets     *BucketMap
 	database    *leveldb.DB
 	uam         *UserAccountMgmt
@@ -98,7 +98,7 @@ func newNode() *Node {
 		poolNetAddr: string(naddr.NetAddr),
 		poolChan:    make(chan *microchain.MinerMicroTx, 1024),
 		srvConn:     c,
-		ctrlChan:    &network.JsonConn{Conn: p},
+		ctrlChan:    p,
 		buckets:     newBucketMap(),
 		database:    db,
 		uam:         uam,
@@ -128,11 +128,13 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		}
 		n.poolConn = udpc
 	}
+	fmt.Println("reporttx 1:",tx.String())
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
 		n.poolConn.Close()
 		n.poolConn = nil
+		fmt.Println("report tx:",err)
 		return nil, err
 	}
 
@@ -145,18 +147,21 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	if e != nil {
 		n.poolConn.Close()
 		n.poolConn = nil
+		fmt.Println("report tx:",err)
 		return nil, e
 	}
 
 	err = json.Unmarshal(buf, ack)
 	if err != nil {
+		fmt.Println("report tx:",err)
 		return nil, err
 	}
 
 	if ack.Code == 0 {
+		fmt.Println("report tx,get pool tx:",ptx.String())
 		return ptx, nil
 	}
-
+	fmt.Println("report tx:",ack.String())
 	return nil, errors.New(ack.Msg)
 
 }
@@ -189,19 +194,22 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
-
+	fmt.Println("Control Channel Receive:",req.String())
 	switch req.Typ {
 	case MsgDeliverMicroTx:
 		if req.TX == nil {
+			fmt.Println("1")
 			return ack
 		}
 		if m, err := n.uam.dbGetMinerMicroTx(req.TX); err == nil {
 			ack.Data = m
 			ack.Msg = "success"
 			ack.Code = 0
+			fmt.Println("2")
 			break
 		}
 		if b := n.uam.checkMicroTx(req.TX); !b {
+			fmt.Println("3")
 			return ack
 		}
 		var (
@@ -209,6 +217,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			err error
 		)
 		if sig, err = WInst().SignJson(*req.TX); err != nil {
+			fmt.Println("4")
 			return ack
 		}
 		mtx := &microchain.MinerMicroTx{
@@ -217,8 +226,11 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 		}
 		err = n.uam.saveUserMinerMicroTx(mtx)
 		if err != nil {
+			fmt.Println("5")
 			return ack
 		}
+
+		fmt.Println("MinerMicroTx Save To DB",mtx.String())
 
 		n.poolChan <- mtx
 		n.uam.updateByMicroTx(req.TX)
@@ -233,6 +245,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 
 		tx, f, err := n.SyncMicro(req.SMT.User)
 		if err != nil {
+			fmt.Println("sync micro err",err,req.SMT.User.String())
 			return ack
 		}
 
@@ -243,10 +256,12 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 
 		sua, f, e := n.SyncUa(req.SMT.User)
 		if e != nil {
+			fmt.Println("sync ua err",req.SMT.User.String())
 			return ack
 		}
 
 		if f {
+			fmt.Println("begin reset ua from pool",sua.String())
 			n.uam.resetFromPool(req.SMT.User, sua)
 		}
 
@@ -263,6 +278,8 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			ack.Msg = "success"
 		}
 
+		fmt.Println("answer to user",req.SMT.User.String(),ack.String())
+
 	case MsgPingTest:
 		ack.Code = 0
 		ack.Msg = "success"
@@ -273,14 +290,22 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 
 func (n *Node) CtrlService(sig chan struct{}) {
 	for {
+		buf:=make([]byte,10240)
 		req := &MsgReq{}
-		err := n.ctrlChan.ReadJsonMsg(req)
+		nr,addr,err := n.ctrlChan.ReadFrom(buf)
 		if err != nil {
 			log.Warn("control channel error ", err)
 			continue
 		}
+		err=json.Unmarshal(buf[:nr],req)
+		if err!=nil{
+			log.Warn("control channel bad request ", err)
+			continue
+		}
+
 		data := n.ctrlChanRecv(req)
-		n.ctrlChan.WriteJsonMsg(data)
+		j,_:=json.Marshal(*data)
+		n.ctrlChan.WriteTo(j,addr)
 	}
 }
 
@@ -430,6 +455,8 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 	sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
 
+	fmt.Println("begin to sync microtx from pool",sr.String())
+
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
 		return nil, find, err
@@ -439,6 +466,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 	r := &microchain.SyncResp{}
 	r.Data = ptx
 
+
 	err = jconn.ReadJsonMsg(r)
 	if err != nil {
 		return nil, find, err
@@ -447,6 +475,8 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 	if r.Code == 0 {
 		find = true
 	}
+
+	fmt.Println("receive ack microtx from pool",r.String())
 
 	return ptx, find, nil
 }
@@ -469,6 +499,7 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
+		fmt.Println("write to pool failed",user.String(),err)
 		return nil, find, err
 	}
 
@@ -479,8 +510,11 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	err = jconn.ReadJsonMsg(r)
 	if err != nil {
+		fmt.Println("read json error",err)
 		return nil, find, err
 	}
+
+	fmt.Println("SyncUa resp:",r.String())
 
 	if r.Code == 0 {
 		find = true

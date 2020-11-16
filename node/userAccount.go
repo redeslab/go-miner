@@ -65,6 +65,16 @@ func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
 	}
 }
 
+func NewUserAccount() *UserAccount  {
+	return &UserAccount{
+		TokenBalance:&big.Int{},
+		TrafficBalance:&big.Int{},
+		TotalTraffic:&big.Int{},
+		UptoPoolTraffic:&big.Int{},
+		MinerCredit:&big.Int{},
+	}
+}
+
 func (uam *UserAccountMgmt) dbMicroTxKeyGet(fmts string, user common.Address, credit *big.Int) string {
 	return fmt.Sprintf(fmts, SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String(), credit.String())
 }
@@ -101,20 +111,24 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 
 	ua, ok := uam.users[tx.User]
 	if !ok {
+		fmt.Println("check microtx,1")
 		return false
 	}
 
 	if ua.PoolRefused {
+		fmt.Println("check microtx,2")
 		return false
 	}
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
 	if zamount.Cmp(tx.MinerAmount) != 0 {
+		fmt.Println("check microtx,3")
 		return false
 	}
 
 	if tx.UsedTraffic.Cmp(ua.TrafficBalance) > 0 {
+		fmt.Println("check microtx,4")
 		return false
 	}
 	return true
@@ -174,7 +188,7 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 
 	ua, ok := uam.users[user]
 	if !ok {
-		ua := &UserAccount{}
+		ua = NewUserAccount()
 		uam.users[user] = ua
 	}
 	ua.MinerCredit = credit
@@ -187,7 +201,7 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 
 	ua, ok := uam.users[user]
 	if !ok {
-		ua := &UserAccount{}
+		ua = NewUserAccount()
 		uam.users[user] = ua
 	}
 	ua.TotalTraffic = sua.UsedTraffic
