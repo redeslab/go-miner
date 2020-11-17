@@ -122,7 +122,7 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
-	if zamount.Cmp(tx.MinerAmount) != 0 {
+	if zamount.Cmp(tx.MinerAmount) < 0 {
 		fmt.Println("check microtx,3")
 		return false
 	}
@@ -192,6 +192,7 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 		uam.users[user] = ua
 	}
 	ua.MinerCredit = credit
+	ua.UptoPoolTraffic = credit
 }
 
 func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.SyncUA) {
@@ -207,7 +208,6 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 	ua.TotalTraffic = sua.UsedTraffic
 	ua.TokenBalance = sua.TokenBalance
 	ua.TrafficBalance = sua.TrafficBalance
-	ua.UptoPoolTraffic = sua.UsedTraffic
 	ua.PoolRefused = false
 
 }

@@ -134,7 +134,7 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	if err != nil || nw != len(j) {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx:",err)
+		fmt.Println("report tx2:",err)
 		return nil, err
 	}
 
@@ -143,17 +143,17 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	ack.Data = ptx
 
 	buf := make([]byte, 10240)
-	_, e := n.poolConn.Read(buf)
+	nr, e := n.poolConn.Read(buf)
 	if e != nil {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx:",err)
+		fmt.Println("report tx3:",err)
 		return nil, e
 	}
 
-	err = json.Unmarshal(buf, ack)
+	err = json.Unmarshal(buf[:nr], ack)
 	if err != nil {
-		fmt.Println("report tx:",err)
+		fmt.Println("report tx4:",err)
 		return nil, err
 	}
 
@@ -161,7 +161,7 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		fmt.Println("report tx,get pool tx:",ptx.String())
 		return ptx, nil
 	}
-	fmt.Println("report tx:",ack.String())
+	fmt.Println("report tx5:",ack.String())
 	return nil, errors.New(ack.Msg)
 
 }
