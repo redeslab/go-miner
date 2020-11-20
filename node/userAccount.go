@@ -27,15 +27,15 @@ type UserAccount struct {
 
 	PoolRefused bool
 }
-func (ua *UserAccount)String() string  {
-	rf:="false"
-	if ua.PoolRefused{
+
+func (ua *UserAccount) String() string {
+	rf := "false"
+	if ua.PoolRefused {
 		rf = "true"
 	}
 	return fmt.Sprintf("TokenBalance:%s,TrafficBalance: %s,TotalTraffic: %s,UptoPoolTraffic: %s,MinerCredit:%s,PoolRefused %s",
-		ua.TokenBalance.String(),ua.TrafficBalance.String(),ua.TotalTraffic.String(),ua.UptoPoolTraffic.String(),ua.MinerCredit.String(),rf)
+		ua.TokenBalance.String(), ua.TrafficBalance.String(), ua.TotalTraffic.String(), ua.UptoPoolTraffic.String(), ua.MinerCredit.String(), rf)
 }
-
 
 func (ua *UserAccount) dup() *UserAccount {
 	return &UserAccount{
@@ -75,13 +75,13 @@ func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
 	}
 }
 
-func NewUserAccount() *UserAccount  {
+func NewUserAccount() *UserAccount {
 	return &UserAccount{
-		TokenBalance:&big.Int{},
-		TrafficBalance:&big.Int{},
-		TotalTraffic:&big.Int{},
-		UptoPoolTraffic:&big.Int{},
-		MinerCredit:&big.Int{},
+		TokenBalance:    &big.Int{},
+		TrafficBalance:  &big.Int{},
+		TotalTraffic:    &big.Int{},
+		UptoPoolTraffic: &big.Int{},
+		MinerCredit:     &big.Int{},
 	}
 }
 
@@ -130,8 +130,8 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 		return false
 	}
 
-	fmt.Println("checkMicroTx:",tx.String())
-	fmt.Println("checkMicroTx:",ua.String())
+	fmt.Println("checkMicroTx:", tx.String())
+	fmt.Println("checkMicroTx:", ua.String())
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
@@ -152,7 +152,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 	locker.Lock()
 	defer locker.Unlock()
 
-	fmt.Println("update By MicroTx :",tx.String())
+	fmt.Println("update By MicroTx :", tx.String())
 	ua, ok := uam.users[tx.User]
 	if !ok {
 		log.Print("unexpected error, not found user account")
@@ -162,8 +162,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 	ua.TotalTraffic = tx.UsedTraffic
 	ua.MinerCredit = tx.MinerCredit
 
-	fmt.Println("update By MicroTx:",ua.String())
-
+	fmt.Println("update By MicroTx:", ua.String())
 
 }
 
@@ -209,12 +208,12 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 		uam.users[user] = ua
 	}
 
-	ua.MinerCredit = coutil.MaxBigInt(ua.MinerCredit,credit)
-	if ua.MinerCredit.Cmp(ua.UptoPoolTraffic)>0{
+	ua.MinerCredit = coutil.MaxBigInt(ua.MinerCredit, credit)
+	if ua.MinerCredit.Cmp(ua.UptoPoolTraffic) > 0 {
 		//need to report
 	}
 	//now we not report
-	ua.UptoPoolTraffic = credit  //used to report left
+	ua.UptoPoolTraffic = credit //used to report left
 
 	//ua.TotalTraffic = coutil.MaxBigInt(ua.TotalTraffic)
 }
@@ -224,18 +223,18 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 	locker.Lock()
 	defer locker.Unlock()
 
-	fmt.Println("reset ua from  pool ",sua.String())
+	fmt.Println("reset ua from  pool ", sua.String())
 	ua, ok := uam.users[user]
 	if !ok {
 		ua = NewUserAccount()
 		uam.users[user] = ua
 	}
-	ua.TotalTraffic = coutil.MaxBigInt(sua.UsedTraffic,ua.TotalTraffic)
+	ua.TotalTraffic = coutil.MaxBigInt(sua.UsedTraffic, ua.TotalTraffic)
 	ua.TokenBalance = sua.TokenBalance
 	ua.TrafficBalance = sua.TrafficBalance
 	ua.PoolRefused = false
 
-	fmt.Println("reset ua from pool result:",ua.String())
+	fmt.Println("reset ua from pool result:", ua.String())
 }
 
 func (uam *UserAccountMgmt) syncBalance(user common.Address, sua *microchain.SyncUA) {
@@ -288,7 +287,7 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	key := uam.DBPoolMicroTxKeyGet(user, ua.UptoPoolTraffic)
 
-	fmt.Println("get last Microtx:",ua.String(),key)
+	fmt.Println("get last Microtx:", ua.String(), key)
 
 	locker := uam.dblock[key]
 	locker.RLock()
@@ -298,11 +297,11 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	err := com.GetJsonObj(uam.database, []byte(key), dbtx)
 	if err != nil {
-		fmt.Println("get last microtx failed:",ua.String())
+		fmt.Println("get last microtx failed:", ua.String())
 		return nil
 	}
 
-	fmt.Println("get last microtx success",dbtx.String())
+	fmt.Println("get last microtx success", dbtx.String())
 
 	return dbtx
 }
@@ -314,7 +313,7 @@ func (uam *UserAccountMgmt) loadFromDB() {
 
 	iter := uam.database.NewIterator(r, nil)
 	for iter.Next() {
-		fmt.Println("uam load from db:",string(iter.Key()),string(iter.Value()))
+		fmt.Println("uam load from db:", string(iter.Key()), string(iter.Value()))
 		user, _, _ := uam.DBPoolMicroTxKeyDerive(string(iter.Key()))
 		var (
 			ua *UserAccount
@@ -327,14 +326,14 @@ func (uam *UserAccountMgmt) loadFromDB() {
 
 		dbtx := &microchain.DBMicroTx{}
 		json.Unmarshal(iter.Value(), dbtx)
-		fmt.Println("uam load from db: dbtx is",dbtx.String())
+		fmt.Println("uam load from db: dbtx is", dbtx.String())
 		ua.MinerCredit = dbtx.MinerCredit
 		ua.TrafficBalance = dbtx.TrafficBalance
 		ua.TokenBalance = dbtx.TokenBalance
 		ua.TotalTraffic = dbtx.UsedTraffic
 		ua.UptoPoolTraffic = dbtx.MinerCredit
 
-		fmt.Println("uam load from db: ua is",ua.String())
+		fmt.Println("uam load from db: ua is", ua.String())
 	}
 
 }

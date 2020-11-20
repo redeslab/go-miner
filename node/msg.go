@@ -53,11 +53,11 @@ type PingTest struct {
 	PayLoad string
 }
 
-func (pt *PingTest)String() string  {
-	if pt == nil{
+func (pt *PingTest) String() string {
+	if pt == nil {
 		return "PingTest is nil"
 	}
-	return fmt.Sprintf("PayLoad: %s",pt.PayLoad)
+	return fmt.Sprintf("PayLoad: %s", pt.PayLoad)
 }
 
 type MsgReq struct {
@@ -67,23 +67,23 @@ type MsgReq struct {
 	PT  *PingTest           `json:"pt,omitempty"`
 }
 
-func (mr *MsgReq)String() string  {
+func (mr *MsgReq) String() string {
 	return fmt.Sprintf("type :%d\r\nSyncMicroTx: %s\r\nMicroTx: %sPingTest:%s\r\n",
-						mr.Typ,
-						mr.SMT.String(),
-						mr.TX.String(),
-						mr.PT.String())
+		mr.Typ,
+		mr.SMT.String(),
+		mr.TX.String(),
+		mr.PT.String())
 }
 
 type SyncMicroTx struct {
 	User common.Address `json:"user"`
 }
 
-func (sm *SyncMicroTx)String() string  {
-	if sm == nil{
+func (sm *SyncMicroTx) String() string {
+	if sm == nil {
 		return "SyncMicroTx is nil"
 	}
-	return fmt.Sprintf("User Address:%s",sm.User.String())
+	return fmt.Sprintf("User Address:%s", sm.User.String())
 }
 
 type MsgAck struct {
@@ -93,12 +93,12 @@ type MsgAck struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-func (ack *MsgAck)String() string  {
-	if ack == nil{
+func (ack *MsgAck) String() string {
+	if ack == nil {
 		return "ack is nil"
 	}
-	j,err:=json.Marshal(*ack)
-	if err!=nil{
+	j, err := json.Marshal(*ack)
+	if err != nil {
 		return err.Error()
 	}
 
