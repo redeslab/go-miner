@@ -55,11 +55,11 @@ func initMiner(_ *cobra.Command, _ []string) {
 	defaultSys := &node.Conf{
 		EthereumConfig: &com.EthereumConfig{
 			NetworkID:   com.RopstenNetworkId,
-			EthApiUrl:   "https://ropsten.infura.io/v3/fe5ffffba0bf46bb9dc27fd5e04cd6cb",
-			MicroPaySys: common.HexToAddress("0xbabababababababababababababababababababa"),
-			Token:       common.HexToAddress("0xbabababababababababababababababababababa"),
+			EthApiUrl:   "https://ropsten.infura.io/v3/d64d364124684359ace20feae1f9ac20",
+			MicroPaySys: common.HexToAddress("0x72d5f9f633f537f87ef7415b8bdbfa438d0a1a6c"),
+			Token:       common.HexToAddress("0xad44c8493de3fe2b070f33927a315b50da9a0e25"),
 		},
-		BAS: "108.61.223.99",
+		BAS: "167.179.75.39",
 	}
 
 	byt, err := json.MarshalIndent(defaultSys, "", "\t")

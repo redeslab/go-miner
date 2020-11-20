@@ -33,7 +33,7 @@ const (
 	ConfFile       = "conf.hop"
 )
 
-var CMDServicePort = "42017"
+var CMDServicePort = "42999"
 var SysConf = &Conf{}
 var PathSetting = &PathConf{}
 
