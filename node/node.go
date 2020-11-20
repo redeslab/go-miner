@@ -18,6 +18,7 @@ import (
 	"github.com/op/go-logging"
 	"net"
 	"sync"
+	"time"
 )
 
 var (
@@ -128,7 +129,8 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		}
 		n.poolConn = udpc
 	}
-	fmt.Println("reporttx 1:",tx.String())
+
+	fmt.Println("report tx 1:",tx.String())
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
@@ -143,6 +145,7 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	ack.Data = ptx
 
 	buf := make([]byte, 10240)
+	n.poolConn.SetDeadline(time.Now().Add(time.Second*2))
 	nr, e := n.poolConn.Read(buf)
 	if e != nil {
 		n.poolConn.Close()
@@ -150,6 +153,7 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		fmt.Println("report tx3:",err)
 		return nil, e
 	}
+	n.poolConn.SetDeadline(time.Time{})
 
 	err = json.Unmarshal(buf[:nr], ack)
 	if err != nil {
@@ -250,6 +254,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 		}
 
 		if f {
+			fmt.Println("update ua by pool tx",tx.String())
 			n.uam.resetCredit(req.SMT.User, tx.MinerCredit)
 			ack.Data = tx.MinerMicroTx
 		}
@@ -496,6 +501,8 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 	sr.Typ = microchain.SyncUserACC
 	//sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
+
+	fmt.Println("Sync Ua from Pool",sr.String())
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
