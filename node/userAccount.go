@@ -10,11 +10,9 @@ import (
 	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"github.com/hyperorchidlab/go-miner-pool/microchain"
 	coutil "github.com/hyperorchidlab/pirate_contract/util"
-
-	"strings"
-
 	"log"
 	"math/big"
+	"strings"
 	"sync"
 )
 
