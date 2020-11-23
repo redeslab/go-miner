@@ -38,10 +38,8 @@ mac:
 	GOOS=darwin go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).mac
 arm:
 	GOOS=linux GOARM=7 GOARCH=arm go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).arm
-linux:
-	GOOS=linux GOARCH=amd64 go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).lnx
-win:
-	GOOS=windows GOARCH=amd64 go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).exe
+lnx:
+	GOOS=linux go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).lnx
 
 clean:
 	rm $(BINDIR)/$(NAME)
