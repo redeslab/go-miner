@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/VpnTube/go-pool/common"
 	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"github.com/hyperorchidlab/go-miner/node"
 	"github.com/hyperorchidlab/go-miner/pbs"
@@ -60,6 +61,11 @@ func main() {
 }
 
 func mainRun(_ *cobra.Command, _ []string) {
+
+	if param.version {
+		fmt.Println(common.CurrentVersion)
+		return
+	}
 
 	node.InitMinerNode(param.password, param.CMDPort)
 
