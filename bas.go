@@ -8,6 +8,7 @@ import (
 	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/hyperorchidlab/go-miner/bas"
 	"github.com/hyperorchidlab/go-miner/node"
+	"github.com/kprc/nbsnetwork/tools/privateip"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"net"
@@ -39,12 +40,19 @@ func basReg(_ *cobra.Command, _ []string) {
 	node.PathSetting.WalletPath = node.WalletDir(node.BaseDir())
 
 	if err := node.WInst().Open(param.password); err != nil {
-		panic(err)
+		fmt.Println("password not correct, can't open wallet")
+		return
 	}
 
 	t, e := dbSrv.CheckIPType(param.minerIP)
 	if e != nil {
-		panic(e)
+		fmt.Println("ip error, ", e.Error())
+		return
+	}
+
+	if privateip.IsPrivateIPStr(param.minerIP) {
+		fmt.Println("error: miner ip is a reserved ip")
+		return
 	}
 
 	if param.location == "" || len(param.location) > 8 {
@@ -60,20 +68,23 @@ func basReg(_ *cobra.Command, _ []string) {
 	basip := param.basIP
 
 	if basip == "" {
+		fmt.Println("bas ip not set, use system config ip address")
 		node.PathSetting.ConfPath = node.MinerConfFile(node.BaseDir())
 		jsonStr, err := ioutil.ReadFile(node.PathSetting.ConfPath)
 		if err != nil {
-			panic("Load config failed")
+			fmt.Println("load config failed")
+			return
 		}
 		if err := json.Unmarshal(jsonStr, node.SysConf); err != nil {
-			panic(err)
+			fmt.Println(err)
+			return
 		}
 
 		basip = node.SysConf.BAS
 		if net.ParseIP(basip) == nil {
-			panic("bas ip from config file error")
+			fmt.Println("bas ip from config file error")
+			return
 		}
-
 	}
 
 	req := &dbSrv.RegRequest{
