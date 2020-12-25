@@ -349,7 +349,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	jsonConn := &network.JsonConn{Conn: lvConn}
 	req := &SetupReq{}
 	if err := jsonConn.ReadJsonMsg(req); err != nil {
-		panic(err)
+		panic(fmt.Errorf("read setup msg err:%s", err))
 	}
 
 	if !req.Verify() {
@@ -360,22 +360,22 @@ func (n *Node) newWorker(conn net.Conn) {
 
 	var aesKey account.PipeCryptKey
 	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
-		panic(err)
+		panic(fmt.Errorf("generate aes key err:%s", err))
 	}
 	aesConn, err := network.NewAesConn(lvConn, aesKey[:], req.IV)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("create aes connection err:%s", err))
 	}
 	jsonConn = &network.JsonConn{Conn: aesConn}
 	prob := &ProbeReq{}
 	if err := jsonConn.ReadJsonMsg(prob); err != nil {
-		panic(err)
+		panic(fmt.Errorf("read probe msg err:%s", err))
 	}
 
 	nodeLog.Debug("Request target:", prob.Target)
 	tgtConn, err := net.Dial("tcp", prob.Target)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("dial target[%s] err:%s", prob.Target, err))
 	}
 	_ = tgtConn.(*net.TCPConn).SetKeepAlive(true)
 
@@ -390,12 +390,12 @@ func (n *Node) newWorker(conn net.Conn) {
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
-				//nodeLog.Noticef("Client->Proxy read err:%s", err)
+				nodeLog.Noticef("Client->Proxy read err:%s", err)
 				panic(err)
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
-				//nodeLog.Noticef("Proxy->Target write err:%s", err)
+				nodeLog.Noticef("Proxy->Target write err:%s", err)
 				panic(err)
 			}
 		}
@@ -406,12 +406,12 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
-			//nodeLog.Noticef("Target->Proxy read err:%s", err)
+			nodeLog.Noticef("Target->Proxy read err:%s", err)
 			panic(err)
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			//nodeLog.Noticef("Proxy->Client read err:%s", err)
+			nodeLog.Noticef("Proxy->Client read err:%s", err)
 			panic(err)
 		}
 	}
