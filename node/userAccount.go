@@ -120,12 +120,12 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 
 	ua, ok := uam.users[tx.User]
 	if !ok {
-		fmt.Println("check microtx,1")
+		//fmt.Println("check microtx,1")
 		return false
 	}
 
 	if ua.PoolRefused {
-		fmt.Println("check microtx,2")
+		//fmt.Println("check microtx,2")
 		return false
 	}
 
@@ -135,14 +135,19 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
 	if zamount.Cmp(tx.MinerAmount) < 0 {
-		fmt.Println("check microtx,3")
+		//fmt.Println("check microtx,3")
 		return false
 	}
 
 	if tx.UsedTraffic.Cmp(ua.TrafficBalance) > 0 {
-		fmt.Println("check microtx,4")
+		//fmt.Println("check microtx,4")
 		return false
 	}
+
+	if !tx.VerifyTx(){
+		return false
+	}
+
 	return true
 }
 
@@ -311,6 +316,7 @@ func (uam *UserAccountMgmt) loadFromDB() {
 	r := &util.Range{Start: []byte(pattern), Limit: []byte(DBPoolMicroTxKeyPatternEnd)}
 
 	iter := uam.database.NewIterator(r, nil)
+	defer iter.Release()
 	for iter.Next() {
 		fmt.Println("uam load from db:", string(iter.Key()), string(iter.Value()))
 		user, _, _ := uam.DBPoolMicroTxKeyDerive(string(iter.Key()))

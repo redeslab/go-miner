@@ -220,10 +220,8 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			sig []byte
 			err error
 		)
-		if sig, err = WInst().SignJson(*req.TX); err != nil {
-			fmt.Println("4")
-			return ack
-		}
+		sig = WInst().SignJSONSub(*req.TX)
+
 		mtx := &microchain.MinerMicroTx{
 			MinerSig: sig,
 			MicroTX:  req.TX,
@@ -276,6 +274,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 				ack.Data = dbtx.MinerMicroTx
 			} else {
 				ack.Code = 2
+				ack.Msg = "not data"
 			}
 		}
 		if ack.Data != nil {

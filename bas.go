@@ -8,7 +8,7 @@ import (
 	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/hyperorchidlab/go-miner/bas"
 	"github.com/hyperorchidlab/go-miner/node"
-	"github.com/kprc/nbsnetwork/tools/privateip"
+	"github.com/hyperorchidlab/go-miner-pool/util/privateip"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"net"
