@@ -372,7 +372,6 @@ func (n *Node) newWorker(conn net.Conn) {
 		panic(fmt.Errorf("read probe msg err:%s", err))
 	}
 
-	nodeLog.Debug("Request target:", prob.Target)
 	tgtConn, err := net.Dial("tcp", prob.Target)
 	if err != nil {
 		panic(fmt.Errorf("dial target[%s] err:%s", prob.Target, err))
@@ -390,14 +389,13 @@ func (n *Node) newWorker(conn net.Conn) {
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
-				nodeLog.Noticef("Client->Proxy read err:%s", err)
-				panic(err)
+				panic(fmt.Errorf("Client->Proxy read err:%s", err))
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
-				nodeLog.Noticef("Proxy->Target write err:%s", err)
-				panic(err)
+				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
+			nodeLog.Debug("write to target:", no)
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
@@ -406,13 +404,11 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
-			nodeLog.Noticef("Target->Proxy read err:%s", err)
-			panic(err)
+			panic(fmt.Errorf("Target->Proxy read err:%s", err))
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			nodeLog.Noticef("Proxy->Client read err:%s", err)
-			panic(err)
+			panic(fmt.Errorf("Proxy->Client write err:%s", err))
 		}
 	}
 }
