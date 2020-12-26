@@ -198,22 +198,23 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
-	fmt.Println("Control Channel Receive:", req.String())
+	nodeLog.Debug("Control Channel Receive:", req.String())
+
 	switch req.Typ {
 	case MsgDeliverMicroTx:
 		if req.TX == nil {
-			fmt.Println("1")
+			nodeLog.Debug("1")
 			return ack
 		}
 		if m, err := n.uam.dbGetMinerMicroTx(req.TX); err == nil {
 			ack.Data = m
 			ack.Msg = "success"
 			ack.Code = 0
-			fmt.Println("2")
+			nodeLog.Debug("2")
 			break
 		}
 		if b := n.uam.checkMicroTx(req.TX); !b {
-			fmt.Println("3")
+			nodeLog.Debug("3")
 			return ack
 		}
 		var (
@@ -228,11 +229,11 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 		}
 		err = n.uam.saveUserMinerMicroTx(mtx)
 		if err != nil {
-			fmt.Println("5")
+			nodeLog.Debug("5")
 			return ack
 		}
 
-		fmt.Println("MinerMicroTx Save To DB", mtx.String())
+		nodeLog.Debug("MinerMicroTx Save To DB", mtx.String())
 
 		n.poolChan <- mtx
 		n.uam.updateByMicroTx(req.TX)
@@ -247,24 +248,24 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 
 		tx, f, err := n.SyncMicro(req.SMT.User)
 		if err != nil {
-			fmt.Println("sync micro err", err, req.SMT.User.String())
+			nodeLog.Warning("sync micro err", err, req.SMT.User.String())
 			return ack
 		}
 
 		if f {
-			fmt.Println("update ua by pool tx", tx.String())
+			nodeLog.Debug("update ua by pool tx", tx.String())
 			n.uam.resetCredit(req.SMT.User, tx.MinerCredit)
 			ack.Data = tx.MinerMicroTx
 		}
 
 		sua, f, e := n.SyncUa(req.SMT.User)
 		if e != nil {
-			fmt.Println("sync ua err", req.SMT.User.String())
+			nodeLog.Warning("sync ua err", req.SMT.User.String())
 			return ack
 		}
 
 		if f {
-			fmt.Println("begin reset ua from pool", sua.String())
+			nodeLog.Debug("begin reset ua from pool", sua.String())
 			n.uam.resetFromPool(req.SMT.User, sua)
 		}
 
@@ -282,7 +283,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			ack.Msg = "success"
 		}
 
-		fmt.Println("answer to user", req.SMT.User.String(), ack.String())
+		nodeLog.Debug("answer to user", req.SMT.User.String(), ack.String())
 
 	case MsgPingTest:
 		ack.Code = 0
@@ -298,12 +299,12 @@ func (n *Node) CtrlService(sig chan struct{}) {
 		req := &MsgReq{}
 		nr, addr, err := n.ctrlChan.ReadFrom(buf)
 		if err != nil {
-			log.Warn("control channel error ", err)
+			nodeLog.Warning("control channel error ", err)
 			continue
 		}
 		err = json.Unmarshal(buf[:nr], req)
 		if err != nil {
-			log.Warn("control channel bad request ", err)
+			nodeLog.Warning("control channel bad request ", err)
 			continue
 		}
 
