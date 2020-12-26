@@ -197,7 +197,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
-	nodeLog.Debug("Control Channel Receive:", req, req.String())
+	nodeLog.Debug("Control Channel Receive:", req.String())
 
 	switch req.Typ {
 	case MsgDeliverMicroTx:
@@ -306,7 +306,7 @@ func (n *Node) CtrlService(sig chan struct{}) {
 			nodeLog.Warning("control channel bad request ", err)
 			continue
 		}
-
+		nodeLog.Debug("CtrlService raw data:", string(buf[:nr]))
 		data := n.ctrlChanRecv(req)
 		j, _ := json.Marshal(*data)
 		n.ctrlChan.WriteTo(j, addr)

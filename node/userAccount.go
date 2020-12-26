@@ -318,7 +318,7 @@ func (uam *UserAccountMgmt) loadFromDB() {
 	iter := uam.database.NewIterator(r, nil)
 	defer iter.Release()
 	for iter.Next() {
-		fmt.Println("uam load from db:", string(iter.Key()), string(iter.Value()))
+		//fmt.Println("uam load from db:", string(iter.Key()), string(iter.Value()))
 		user, _, _ := uam.DBPoolMicroTxKeyDerive(string(iter.Key()))
 		var (
 			ua *UserAccount
