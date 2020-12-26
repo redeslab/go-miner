@@ -197,7 +197,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
-	nodeLog.Debug("Control Channel Receive:", req.String())
+	nodeLog.Debug("Control Channel Receive:", req, req.String())
 
 	switch req.Typ {
 	case MsgDeliverMicroTx:
@@ -308,9 +308,7 @@ func (n *Node) CtrlService(sig chan struct{}) {
 		}
 
 		data := n.ctrlChanRecv(req)
-		nodeLog.Debug("Before marshal===>", data)
 		j, _ := json.Marshal(*data)
-		nodeLog.Debug("After marshal===>", string(j))
 		n.ctrlChan.WriteTo(j, addr)
 	}
 }
