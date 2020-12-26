@@ -130,13 +130,13 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		n.poolConn = udpc
 	}
 
-	fmt.Println("report tx 1:", tx.String())
+	nodeLog.Debug("report tx 1:", tx.String())
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx2:", err)
+		nodeLog.Debug("report tx2:", err)
 		return nil, err
 	}
 
@@ -150,22 +150,22 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	if e != nil {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx3:", err)
+		nodeLog.Debug("report tx3:", err)
 		return nil, e
 	}
 	n.poolConn.SetDeadline(time.Time{})
 
 	err = json.Unmarshal(buf[:nr], ack)
 	if err != nil {
-		fmt.Println("report tx4:", err)
+		nodeLog.Debug("report tx4:", err)
 		return nil, err
 	}
 
 	if ack.Code == 0 {
-		fmt.Println("report tx,get pool tx:", ptx.String())
+		nodeLog.Debug("report tx,get pool tx:", ptx.String())
 		return ptx, nil
 	}
-	fmt.Println("report tx5:", ack.String())
+	nodeLog.Debug("report tx5:", ack.String())
 	return nil, errors.New(ack.Msg)
 
 }

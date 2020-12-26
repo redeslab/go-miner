@@ -129,8 +129,8 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 		return false
 	}
 
-	nodeLog.Debug("checkMicroTx:", tx.String())
-	nodeLog.Debug("checkMicroTx:", ua.String())
+	//nodeLog.Debug("checkMicroTx:", tx.String())
+	//nodeLog.Debug("checkMicroTx:", ua.String())
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
@@ -157,7 +157,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 	locker.Lock()
 	defer locker.Unlock()
 
-	fmt.Println("update By MicroTx :", tx.String())
+	nodeLog.Debug("update By MicroTx :", tx.String())
 	ua, ok := uam.users[tx.User]
 	if !ok {
 		log.Print("unexpected error, not found user account")
@@ -167,8 +167,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 	ua.TotalTraffic = tx.UsedTraffic
 	ua.MinerCredit = tx.MinerCredit
 
-	fmt.Println("update By MicroTx:", ua.String())
-
+	nodeLog.Debug("update By MicroTx:", ua.String())
 }
 
 func (uam *UserAccountMgmt) saveUserMinerMicroTx(tx *microchain.MinerMicroTx) error {
