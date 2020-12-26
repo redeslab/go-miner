@@ -395,7 +395,7 @@ func (n *Node) newWorker(conn net.Conn) {
 			if err != nil {
 				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
-			nodeLog.Debug("write to target:", no)
+			//nodeLog.Debug("write to target:", no)
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
