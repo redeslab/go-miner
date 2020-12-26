@@ -8,7 +8,6 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
 	basc "github.com/hyperorchidlab/BAS/client"
 	"github.com/hyperorchidlab/go-miner-pool/account"
 	com "github.com/hyperorchidlab/go-miner-pool/common"
@@ -309,7 +308,9 @@ func (n *Node) CtrlService(sig chan struct{}) {
 		}
 
 		data := n.ctrlChanRecv(req)
+		nodeLog.Debug("Before marshal===>", data)
 		j, _ := json.Marshal(*data)
+		nodeLog.Debug("After marshal===>", string(j))
 		n.ctrlChan.WriteTo(j, addr)
 	}
 }
@@ -344,7 +345,7 @@ func (n *Node) Stop() {
 const BUFFER_SIZE = 1 << 20
 
 func (n *Node) newWorker(conn net.Conn) {
-	log.Debug("new conn:", conn.RemoteAddr().String())
+	nodeLog.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
 	lvConn := network.NewLVConn(conn)
 	jsonConn := &network.JsonConn{Conn: lvConn}
