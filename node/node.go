@@ -214,7 +214,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			break
 		}
 		if b := n.uam.checkMicroTx(req.TX); !b {
-			nodeLog.Debug("3")
+			nodeLog.Debug("3", ack)
 			return ack
 		}
 		var (

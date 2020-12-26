@@ -129,22 +129,23 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 		return false
 	}
 
-	fmt.Println("checkMicroTx:", tx.String())
-	fmt.Println("checkMicroTx:", ua.String())
+	nodeLog.Debug("checkMicroTx:", tx.String())
+	nodeLog.Debug("checkMicroTx:", ua.String())
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
 	if zamount.Cmp(tx.MinerAmount) < 0 {
-		//fmt.Println("check microtx,3")
+		nodeLog.Debug("check microtx, 3")
 		return false
 	}
 
 	if tx.UsedTraffic.Cmp(ua.TrafficBalance) > 0 {
-		//fmt.Println("check microtx,4")
+		nodeLog.Debug("check microtx, 4")
 		return false
 	}
 
-	if !tx.VerifyTx(){
+	if !tx.VerifyTx() {
+		nodeLog.Debug("check microtx, 5")
 		return false
 	}
 
