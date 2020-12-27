@@ -209,11 +209,11 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			ack.Data = m
 			ack.Msg = "success"
 			ack.Code = 0
-			nodeLog.Debug("2")
+			nodeLog.Debug("2", err)
 			break
 		}
-		if b := n.uam.checkMicroTx(req.TX); !b {
-			nodeLog.Debug("3", ack)
+		if err := n.uam.checkMicroTx(req.TX); err != nil {
+			nodeLog.Debug(err, ack)
 			return ack
 		}
 		var (
@@ -228,7 +228,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 		}
 		err = n.uam.saveUserMinerMicroTx(mtx)
 		if err != nil {
-			nodeLog.Debug("5")
+			nodeLog.Debug("save user miner micro tx :=>", err)
 			return ack
 		}
 
@@ -274,7 +274,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 				ack.Data = dbtx.MinerMicroTx
 			} else {
 				ack.Code = 2
-				ack.Msg = "not data"
+				ack.Msg = "no data"
 			}
 		}
 		if ack.Data != nil {
@@ -455,7 +455,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 	sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
 
-	fmt.Println("begin to sync microtx from pool", sr.String())
+	nodeLog.Debug("begin to sync micro tx from pool", sr.String())
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
@@ -475,7 +475,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 		find = true
 	}
 
-	fmt.Println("receive ack microtx from pool", r.String())
+	nodeLog.Debug("receive ack micro tx from pool", r.String())
 
 	return ptx, find, nil
 }
@@ -493,14 +493,13 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	sr := &microchain.SyncReq{}
 	sr.Typ = microchain.SyncUserACC
-	//sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
 
-	fmt.Println("Sync Ua from Pool", sr.String())
+	nodeLog.Debug("Sync Ua from Pool", sr.String())
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
-		fmt.Println("write to pool failed", user.String(), err)
+		nodeLog.Warning("write to pool failed", user.String(), err)
 		return nil, find, err
 	}
 
@@ -511,11 +510,11 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	err = jconn.ReadJsonMsg(r)
 	if err != nil {
-		fmt.Println("read json error", err)
+		nodeLog.Warning("read json error", err)
 		return nil, find, err
 	}
 
-	fmt.Println("SyncUa resp:", r.String())
+	nodeLog.Debug("SyncUa resp:", r.String())
 
 	if r.Code == 0 {
 		find = true

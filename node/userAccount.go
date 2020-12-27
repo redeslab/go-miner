@@ -50,8 +50,8 @@ func (ua *UserAccount) dup() *UserAccount {
 type UserAccountMgmt struct {
 	poolAddr common.Address
 	users    map[common.Address]*UserAccount
-	lock     map[common.Address]sync.RWMutex
-	dblock   map[string]sync.RWMutex
+	lock     map[common.Address]*sync.RWMutex
+	dbLock   map[string]*sync.RWMutex
 	database *leveldb.DB
 }
 
@@ -68,8 +68,8 @@ func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
 	return &UserAccountMgmt{
 		poolAddr: pool,
 		users:    make(map[common.Address]*UserAccount),
-		lock:     make(map[common.Address]sync.RWMutex),
-		dblock:   make(map[string]sync.RWMutex),
+		lock:     make(map[common.Address]*sync.RWMutex),
+		dbLock:   make(map[string]*sync.RWMutex),
 		database: db,
 	}
 }
@@ -113,47 +113,57 @@ func (uam *UserAccountMgmt) DBPoolMicroTxKeyDerive(key string) (user common.Addr
 	return uam.DBUserMicroTXKeyDerive(key)
 }
 
-func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
-	locker := uam.lock[tx.User]
+func (uam *UserAccountMgmt) getUserLocker(user common.Address) *sync.RWMutex {
+	locker, ok := uam.lock[user]
+	if !ok {
+		locker = &sync.RWMutex{}
+		uam.lock[user] = locker
+	}
+	return locker
+}
+
+func (uam *UserAccountMgmt) getUserDBLocker(key string) *sync.RWMutex {
+	locker, ok := uam.dbLock[key]
+	if !ok {
+		locker = &sync.RWMutex{}
+		uam.dbLock[key] = locker
+	}
+	return locker
+}
+
+func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) error {
+	locker := uam.getUserLocker(tx.User)
 	locker.RLock()
 	defer locker.RUnlock()
 
 	ua, ok := uam.users[tx.User]
 	if !ok {
-		//fmt.Println("check microtx,1")
-		return false
+		return fmt.Errorf("no such user address ")
 	}
 
 	if ua.PoolRefused {
-		//fmt.Println("check microtx,2")
-		return false
+		return fmt.Errorf("this user has ben refused by pool")
 	}
-
-	//nodeLog.Debug("checkMicroTx:", tx.String())
-	//nodeLog.Debug("checkMicroTx:", ua.String())
 
 	zamount := &big.Int{}
 	zamount = zamount.Sub(tx.MinerCredit, ua.MinerCredit)
 	if zamount.Cmp(tx.MinerAmount) < 0 {
-		nodeLog.Debug("check microtx, 3")
-		return false
+		return fmt.Errorf("invalid miner amount zamount=[%d] tx miner amount=[%d]", zamount, tx.MinerAmount)
 	}
 
 	if tx.UsedTraffic.Cmp(ua.TrafficBalance) > 0 {
-		nodeLog.Debug("check microtx, 4")
-		return false
+		return fmt.Errorf("insufficient traffic balance:tx.UsedTraffic[%d], ua.TrafficBalance[%d]", tx.UsedTraffic, ua.TrafficBalance)
 	}
 
 	if !tx.VerifyTx() {
-		nodeLog.Debug("check microtx, 5")
-		return false
+		return fmt.Errorf("check signature failed")
 	}
 
-	return true
+	return nil
 }
 
 func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
-	locker := uam.lock[tx.User]
+	locker := uam.getUserLocker(tx.User)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -172,7 +182,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 
 func (uam *UserAccountMgmt) saveUserMinerMicroTx(tx *microchain.MinerMicroTx) error {
 	key := uam.DBUserMicroTXKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.dblock[key]
+	locker := uam.getUserDBLocker(key)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -181,7 +191,7 @@ func (uam *UserAccountMgmt) saveUserMinerMicroTx(tx *microchain.MinerMicroTx) er
 
 func (uam *UserAccountMgmt) savePoolMinerMicroTx(tx *microchain.DBMicroTx) error {
 	key := uam.DBPoolMicroTxKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.dblock[key]
+	locker := uam.getUserDBLocker(key)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -190,7 +200,7 @@ func (uam *UserAccountMgmt) savePoolMinerMicroTx(tx *microchain.DBMicroTx) error
 
 func (uam *UserAccountMgmt) dbGetMinerMicroTx(tx *microchain.MicroTX) (*microchain.MinerMicroTx, error) {
 	key := uam.DBUserMicroTXKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.dblock[key]
+	locker := uam.getUserDBLocker(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -202,7 +212,7 @@ func (uam *UserAccountMgmt) dbGetMinerMicroTx(tx *microchain.MicroTX) (*microcha
 }
 
 func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
-	locker := uam.lock[user]
+	locker := uam.getUserLocker(user)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -218,16 +228,14 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 	}
 	//now we not report
 	ua.UptoPoolTraffic = credit //used to report left
-
-	//ua.TotalTraffic = coutil.MaxBigInt(ua.TotalTraffic)
 }
 
 func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.SyncUA) {
-	locker := uam.lock[user]
+	locker := uam.getUserLocker(user) //uam.lock[user]
 	locker.Lock()
 	defer locker.Unlock()
 
-	fmt.Println("reset ua from  pool ", sua.String())
+	nodeLog.Debug("reset ua from  pool ", sua.String())
 	ua, ok := uam.users[user]
 	if !ok {
 		ua = NewUserAccount()
@@ -238,11 +246,11 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 	ua.TrafficBalance = sua.TrafficBalance
 	ua.PoolRefused = false
 
-	fmt.Println("reset ua from pool result:", ua.String())
+	nodeLog.Debug("reset ua from pool result:", ua.String())
 }
 
 func (uam *UserAccountMgmt) syncBalance(user common.Address, sua *microchain.SyncUA) {
-	locker := uam.lock[user]
+	locker := uam.getUserLocker(user) //uam.lock[user]
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -256,7 +264,7 @@ func (uam *UserAccountMgmt) syncBalance(user common.Address, sua *microchain.Syn
 }
 
 func (uam *UserAccountMgmt) getUserAcc(user common.Address) *UserAccount {
-	locker := uam.lock[user]
+	locker := uam.getUserLocker(user) //uam.lock[user]
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -270,7 +278,7 @@ func (uam *UserAccountMgmt) getUserAcc(user common.Address) *UserAccount {
 }
 
 func (uam *UserAccountMgmt) refuse(user common.Address) {
-	locker := uam.lock[user]
+	locker := uam.getUserLocker(user) //uam.lock[user]
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -291,9 +299,9 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	key := uam.DBPoolMicroTxKeyGet(user, ua.UptoPoolTraffic)
 
-	fmt.Println("get last Microtx:", ua.String(), key)
+	nodeLog.Debug("get last Micro tx:", ua.String(), key)
 
-	locker := uam.dblock[key]
+	locker := uam.getUserDBLocker(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -301,11 +309,11 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	err := com.GetJsonObj(uam.database, []byte(key), dbtx)
 	if err != nil {
-		fmt.Println("get last microtx failed:", ua.String())
+		nodeLog.Warning("get last micro tx failed:", ua.String())
 		return nil
 	}
 
-	fmt.Println("get last microtx success", dbtx.String())
+	nodeLog.Debug("get last micro tx success", dbtx.String())
 
 	return dbtx
 }
@@ -331,14 +339,10 @@ func (uam *UserAccountMgmt) loadFromDB() {
 
 		dbtx := &microchain.DBMicroTx{}
 		json.Unmarshal(iter.Value(), dbtx)
-		fmt.Println("uam load from db: dbtx is", dbtx.String())
 		ua.MinerCredit = dbtx.MinerCredit
 		ua.TrafficBalance = dbtx.TrafficBalance
 		ua.TokenBalance = dbtx.TokenBalance
 		ua.TotalTraffic = dbtx.UsedTraffic
 		ua.UptoPoolTraffic = dbtx.MinerCredit
-
-		fmt.Println("uam load from db: ua is", ua.String())
 	}
-
 }
