@@ -129,13 +129,12 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		n.poolConn = udpc
 	}
 
-	nodeLog.Debug("report tx 1:", tx.String())
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
 		n.poolConn.Close()
 		n.poolConn = nil
-		nodeLog.Debug("report tx2:", err)
+		nodeLog.Warning("[reportTx] pool connection Write:=>", err)
 		return nil, err
 	}
 
@@ -149,22 +148,22 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	if e != nil {
 		n.poolConn.Close()
 		n.poolConn = nil
-		nodeLog.Debug("report tx3:", err)
+		nodeLog.Warning("[reportTx] pool connection Read:=>", err)
 		return nil, e
 	}
 	n.poolConn.SetDeadline(time.Time{})
 
 	err = json.Unmarshal(buf[:nr], ack)
 	if err != nil {
-		nodeLog.Debug("report tx4:", err)
+		nodeLog.Warning("[reportTx] Unmarshal:", err)
 		return nil, err
 	}
 
 	if ack.Code == 0 {
-		nodeLog.Debug("report tx,get pool tx:", ptx.String())
+		nodeLog.Debug("[reportTx] tx,get pool tx:", ptx.String())
 		return ptx, nil
 	}
-	nodeLog.Debug("report tx5:", ack.String())
+	nodeLog.Debug("[reportTx] result:", ack.String())
 	return nil, errors.New(ack.Msg)
 
 }
@@ -209,11 +208,10 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			ack.Data = m
 			ack.Msg = "success"
 			ack.Code = 0
-			nodeLog.Debug("2", err)
 			break
 		}
 		if err := n.uam.checkMicroTx(req.TX); err != nil {
-			nodeLog.Debug(err, ack)
+			nodeLog.Debug("", err, ack)
 			return ack
 		}
 		var (
@@ -231,8 +229,6 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			nodeLog.Debug("save user miner micro tx :=>", err)
 			return ack
 		}
-
-		nodeLog.Debug("MinerMicroTx Save To DB", mtx.String())
 
 		n.poolChan <- mtx
 		n.uam.updateByMicroTx(req.TX)

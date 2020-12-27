@@ -167,7 +167,6 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 	locker.Lock()
 	defer locker.Unlock()
 
-	nodeLog.Debug("update By MicroTx :", tx.String())
 	ua, ok := uam.users[tx.User]
 	if !ok {
 		log.Print("unexpected error, not found user account")
@@ -309,12 +308,11 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	err := com.GetJsonObj(uam.database, []byte(key), dbtx)
 	if err != nil {
-		nodeLog.Warning("get last micro tx failed:", ua.String())
+		nodeLog.Warning("get last micro tx failed:", ua.String(), err)
 		return nil
 	}
 
 	nodeLog.Debug("get last micro tx success", dbtx.String())
-
 	return dbtx
 }
 
