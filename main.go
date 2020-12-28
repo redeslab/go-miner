@@ -16,6 +16,9 @@ import (
 	"syscall"
 )
 
+
+var hopVersion string = "0.2"
+
 var param struct {
 	version  bool
 	CMDPort  string
@@ -62,7 +65,7 @@ func main() {
 func mainRun(_ *cobra.Command, _ []string) {
 
 	if param.version {
-		fmt.Println(com.CurrentVersion)
+		fmt.Println("Hop version: ", hopVersion)
 		return
 	}
 

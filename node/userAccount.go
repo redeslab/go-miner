@@ -50,9 +50,50 @@ func (ua *UserAccount) dup() *UserAccount {
 type UserAccountMgmt struct {
 	poolAddr common.Address
 	users    map[common.Address]*UserAccount
-	lock     map[common.Address]sync.RWMutex
-	dblock   map[string]sync.RWMutex
+	glock    sync.Mutex
+	lock     map[common.Address]*sync.RWMutex
+	dblock   map[string]*sync.RWMutex
 	database *leveldb.DB
+}
+
+func (uam *UserAccountMgmt)getUserLock(user common.Address) *sync.RWMutex {
+	lock,ok := uam.lock[user]
+	if ok{
+		return lock
+	}
+
+	uam.glock.Lock()
+	defer uam.glock.Unlock()
+
+	lock,ok = uam.lock[user]
+	if ok{
+		return lock
+	}
+
+	lock = &sync.RWMutex{}
+	uam.lock[user] = lock
+
+	return lock
+}
+
+func (uam *UserAccountMgmt)getDbLock(key string) *sync.RWMutex  {
+	lock,ok:=uam.dblock[key]
+	if ok{
+		return lock
+	}
+	uam.glock.Lock()
+	defer uam.glock.Unlock()
+
+	lock,ok=uam.dblock[key]
+	if ok{
+		return lock
+	}
+
+	lock = &sync.RWMutex{}
+	uam.dblock[key] = lock
+
+	return lock
+
 }
 
 const (
@@ -68,8 +109,8 @@ func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
 	return &UserAccountMgmt{
 		poolAddr: pool,
 		users:    make(map[common.Address]*UserAccount),
-		lock:     make(map[common.Address]sync.RWMutex),
-		dblock:   make(map[string]sync.RWMutex),
+		lock:     make(map[common.Address]*sync.RWMutex),
+		dblock:   make(map[string]*sync.RWMutex),
 		database: db,
 	}
 }
@@ -114,7 +155,7 @@ func (uam *UserAccountMgmt) DBPoolMicroTxKeyDerive(key string) (user common.Addr
 }
 
 func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
-	locker := uam.lock[tx.User]
+	locker := uam.getUserLock(tx.User)
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -152,7 +193,7 @@ func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
 }
 
 func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
-	locker := uam.lock[tx.User]
+	locker := uam.getUserLock(tx.User)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -202,7 +243,7 @@ func (uam *UserAccountMgmt) dbGetMinerMicroTx(tx *microchain.MicroTX) (*microcha
 }
 
 func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
-	locker := uam.lock[user]
+	locker := uam.getUserLock(user)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -223,7 +264,7 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 }
 
 func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.SyncUA) {
-	locker := uam.lock[user]
+	locker := uam.getUserLock(user)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -242,7 +283,7 @@ func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.S
 }
 
 func (uam *UserAccountMgmt) syncBalance(user common.Address, sua *microchain.SyncUA) {
-	locker := uam.lock[user]
+	locker := uam.getUserLock(user)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -256,7 +297,7 @@ func (uam *UserAccountMgmt) syncBalance(user common.Address, sua *microchain.Syn
 }
 
 func (uam *UserAccountMgmt) getUserAcc(user common.Address) *UserAccount {
-	locker := uam.lock[user]
+	locker := uam.getUserLock(user)
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -270,7 +311,7 @@ func (uam *UserAccountMgmt) getUserAcc(user common.Address) *UserAccount {
 }
 
 func (uam *UserAccountMgmt) refuse(user common.Address) {
-	locker := uam.lock[user]
+	locker := uam.getUserLock(user)
 	locker.Lock()
 	defer locker.Unlock()
 

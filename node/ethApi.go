@@ -88,3 +88,7 @@ func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Addres
 	return pool, nil
 
 }
+
+//func QueryMinerData2(subAddr account.ID) (*eth.MinerData, error)  {
+//
+//}
