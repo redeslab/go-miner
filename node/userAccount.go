@@ -154,7 +154,7 @@ func (uam *UserAccountMgmt) DBPoolMicroTxKeyDerive(key string) (user common.Addr
 	return uam.DBUserMicroTXKeyDerive(key)
 }
 
-func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) bool {
+func (uam *UserAccountMgmt) checkMicroTx(tx *microchain.MicroTX) error {
 	locker := uam.getUserLock(tx.User)
 	locker.RLock()
 	defer locker.RUnlock()
@@ -204,7 +204,7 @@ func (uam *UserAccountMgmt) updateByMicroTx(tx *microchain.MicroTX) {
 
 func (uam *UserAccountMgmt) saveUserMinerMicroTx(tx *microchain.MinerMicroTx) error {
 	key := uam.DBUserMicroTXKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.getUserDBLocker(key)
+	locker := uam.getDbLock(key)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -213,7 +213,7 @@ func (uam *UserAccountMgmt) saveUserMinerMicroTx(tx *microchain.MinerMicroTx) er
 
 func (uam *UserAccountMgmt) savePoolMinerMicroTx(tx *microchain.DBMicroTx) error {
 	key := uam.DBPoolMicroTxKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.getUserDBLocker(key)
+	locker := uam.getDbLock(key)
 	locker.Lock()
 	defer locker.Unlock()
 
@@ -222,7 +222,7 @@ func (uam *UserAccountMgmt) savePoolMinerMicroTx(tx *microchain.DBMicroTx) error
 
 func (uam *UserAccountMgmt) dbGetMinerMicroTx(tx *microchain.MicroTX) (*microchain.MinerMicroTx, error) {
 	key := uam.DBUserMicroTXKeyGet(tx.User, tx.MinerCredit)
-	locker := uam.getUserDBLocker(key)
+	locker := uam.getDbLock(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
@@ -323,7 +323,7 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	nodeLog.Debug("get last Micro tx:", ua.String(), key)
 
-	locker := uam.getUserDBLocker(key)
+	locker := uam.getDbLock(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
