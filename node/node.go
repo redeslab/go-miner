@@ -8,7 +8,6 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
 	basc "github.com/hyperorchidlab/BAS/client"
 	"github.com/hyperorchidlab/go-miner-pool/account"
 	com "github.com/hyperorchidlab/go-miner-pool/common"
@@ -130,13 +129,12 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 		n.poolConn = udpc
 	}
 
-	fmt.Println("report tx 1:", tx.String())
 	j, _ := json.Marshal(*tx)
 	nw, err := n.poolConn.Write(j)
 	if err != nil || nw != len(j) {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx2:", err)
+		nodeLog.Warning("[reportTx] pool connection Write:=>", err)
 		return nil, err
 	}
 
@@ -150,22 +148,22 @@ func (n *Node) reportTx(tx *microchain.MinerMicroTx) (*microchain.PoolMicroTx, e
 	if e != nil {
 		n.poolConn.Close()
 		n.poolConn = nil
-		fmt.Println("report tx3:", err)
+		nodeLog.Warning("[reportTx] pool connection Read:=>", err)
 		return nil, e
 	}
 	n.poolConn.SetDeadline(time.Time{})
 
 	err = json.Unmarshal(buf[:nr], ack)
 	if err != nil {
-		fmt.Println("report tx4:", err)
+		nodeLog.Warning("[reportTx] Unmarshal:", err)
 		return nil, err
 	}
 
 	if ack.Code == 0 {
-		fmt.Println("report tx,get pool tx:", ptx.String())
+		nodeLog.Debug("[reportTx] tx,get pool tx:", ptx.String())
 		return ptx, nil
 	}
-	fmt.Println("report tx5:", ack.String())
+	nodeLog.Debug("[reportTx] result:", ack.String())
 	return nil, errors.New(ack.Msg)
 
 }
@@ -198,22 +196,22 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 	ack.Typ = req.Typ
 	ack.Msg = "failure"
 	ack.Code = 1
-	fmt.Println("Control Channel Receive:", req.String())
+	nodeLog.Debug("Control Channel Receive:", req.String())
+
 	switch req.Typ {
 	case MsgDeliverMicroTx:
 		if req.TX == nil {
-			fmt.Println("1")
+			nodeLog.Debug("1")
 			return ack
 		}
 		if m, err := n.uam.dbGetMinerMicroTx(req.TX); err == nil {
 			ack.Data = m
 			ack.Msg = "success"
 			ack.Code = 0
-			fmt.Println("2")
 			break
 		}
-		if b := n.uam.checkMicroTx(req.TX); !b {
-			fmt.Println("3")
+		if err := n.uam.checkMicroTx(req.TX); err != nil {
+			nodeLog.Debug("", err, ack)
 			return ack
 		}
 		var (
@@ -228,11 +226,9 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 		}
 		err = n.uam.saveUserMinerMicroTx(mtx)
 		if err != nil {
-			fmt.Println("5")
+			nodeLog.Debug("save user miner micro tx :=>", err)
 			return ack
 		}
-
-		fmt.Println("MinerMicroTx Save To DB", mtx.String())
 
 		n.poolChan <- mtx
 		n.uam.updateByMicroTx(req.TX)
@@ -247,24 +243,24 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 
 		tx, f, err := n.SyncMicro(req.SMT.User)
 		if err != nil {
-			fmt.Println("sync micro err", err, req.SMT.User.String())
+			nodeLog.Warning("sync micro err", err, req.SMT.User.String())
 			return ack
 		}
 
 		if f {
-			fmt.Println("update ua by pool tx", tx.String())
+			nodeLog.Debug("update ua by pool tx", tx.String())
 			n.uam.resetCredit(req.SMT.User, tx.MinerCredit)
 			ack.Data = tx.MinerMicroTx
 		}
 
 		sua, f, e := n.SyncUa(req.SMT.User)
 		if e != nil {
-			fmt.Println("sync ua err", req.SMT.User.String())
+			nodeLog.Warning("sync ua err", req.SMT.User.String())
 			return ack
 		}
 
 		if f {
-			fmt.Println("begin reset ua from pool", sua.String())
+			nodeLog.Debug("begin reset ua from pool", sua.String())
 			n.uam.resetFromPool(req.SMT.User, sua)
 		}
 
@@ -274,7 +270,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 				ack.Data = dbtx.MinerMicroTx
 			} else {
 				ack.Code = 2
-				ack.Msg = "not data"
+				ack.Msg = "no data"
 			}
 		}
 		if ack.Data != nil {
@@ -282,7 +278,7 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			ack.Msg = "success"
 		}
 
-		fmt.Println("answer to user", req.SMT.User.String(), ack.String())
+		nodeLog.Debug("answer to user", req.SMT.User.String(), ack.String())
 
 	case MsgPingTest:
 		ack.Code = 0
@@ -298,15 +294,15 @@ func (n *Node) CtrlService(sig chan struct{}) {
 		req := &MsgReq{}
 		nr, addr, err := n.ctrlChan.ReadFrom(buf)
 		if err != nil {
-			log.Warn("control channel error ", err)
+			nodeLog.Warning("control channel error ", err)
 			continue
 		}
 		err = json.Unmarshal(buf[:nr], req)
 		if err != nil {
-			log.Warn("control channel bad request ", err)
+			nodeLog.Warning("control channel bad request ", err)
 			continue
 		}
-
+		nodeLog.Debug("CtrlService raw data:", string(buf[:nr]))
 		data := n.ctrlChanRecv(req)
 		j, _ := json.Marshal(*data)
 		n.ctrlChan.WriteTo(j, addr)
@@ -343,13 +339,13 @@ func (n *Node) Stop() {
 const BUFFER_SIZE = 1 << 20
 
 func (n *Node) newWorker(conn net.Conn) {
-	log.Debug("new conn:", conn.RemoteAddr().String())
+	nodeLog.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
 	lvConn := network.NewLVConn(conn)
 	jsonConn := &network.JsonConn{Conn: lvConn}
 	req := &SetupReq{}
 	if err := jsonConn.ReadJsonMsg(req); err != nil {
-		panic(err)
+		panic(fmt.Errorf("read setup msg err:%s", err))
 	}
 
 	if !req.Verify() {
@@ -360,22 +356,21 @@ func (n *Node) newWorker(conn net.Conn) {
 
 	var aesKey account.PipeCryptKey
 	if err := account.GenerateAesKey(&aesKey, req.SubAddr.ToPubKey(), WInst().CryptKey()); err != nil {
-		panic(err)
+		panic(fmt.Errorf("generate aes key err:%s", err))
 	}
 	aesConn, err := network.NewAesConn(lvConn, aesKey[:], req.IV)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("create aes connection err:%s", err))
 	}
 	jsonConn = &network.JsonConn{Conn: aesConn}
 	prob := &ProbeReq{}
 	if err := jsonConn.ReadJsonMsg(prob); err != nil {
-		panic(err)
+		panic(fmt.Errorf("read probe msg err:%s", err))
 	}
 
-	nodeLog.Debug("Request target:", prob.Target)
 	tgtConn, err := net.Dial("tcp", prob.Target)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("dial target[%s] err:%s", prob.Target, err))
 	}
 	_ = tgtConn.(*net.TCPConn).SetKeepAlive(true)
 
@@ -390,14 +385,13 @@ func (n *Node) newWorker(conn net.Conn) {
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
-				//nodeLog.Noticef("Client->Proxy read err:%s", err)
-				panic(err)
+				panic(fmt.Errorf("Client->Proxy read err:%s", err))
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
-				//nodeLog.Noticef("Proxy->Target write err:%s", err)
-				panic(err)
+				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
+			//nodeLog.Debug("write to target:", no)
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
@@ -406,13 +400,11 @@ func (n *Node) newWorker(conn net.Conn) {
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
-			//nodeLog.Noticef("Target->Proxy read err:%s", err)
-			panic(err)
+			panic(fmt.Errorf("Target->Proxy read err:%s", err))
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			//nodeLog.Noticef("Proxy->Client read err:%s", err)
-			panic(err)
+			panic(fmt.Errorf("Proxy->Client write err:%s", err))
 		}
 	}
 }
@@ -459,7 +451,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 	sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
 
-	fmt.Println("begin to sync microtx from pool", sr.String())
+	nodeLog.Debug("begin to sync micro tx from pool", sr.String())
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
@@ -479,7 +471,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 		find = true
 	}
 
-	fmt.Println("receive ack microtx from pool", r.String())
+	nodeLog.Debug("receive ack micro tx from pool", r.String())
 
 	return ptx, find, nil
 }
@@ -497,14 +489,13 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	sr := &microchain.SyncReq{}
 	sr.Typ = microchain.SyncUserACC
-	//sr.Miner = n.subAddr.ToArray()
 	sr.UserAddr = user
 
-	fmt.Println("Sync Ua from Pool", sr.String())
+	nodeLog.Debug("Sync Ua from Pool", sr.String())
 
 	err = jconn.WriteJsonMsg(*sr)
 	if err != nil {
-		fmt.Println("write to pool failed", user.String(), err)
+		nodeLog.Warning("write to pool failed", user.String(), err)
 		return nil, find, err
 	}
 
@@ -515,11 +506,11 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	err = jconn.ReadJsonMsg(r)
 	if err != nil {
-		fmt.Println("read json error", err)
+		nodeLog.Warning("read json error", err)
 		return nil, find, err
 	}
 
-	fmt.Println("SyncUa resp:", r.String())
+	nodeLog.Debug("SyncUa resp:", r.String())
 
 	if r.Code == 0 {
 		find = true
