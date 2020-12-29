@@ -16,7 +16,6 @@ import (
 	"syscall"
 )
 
-
 var hopVersion string = "0.2"
 
 var param struct {

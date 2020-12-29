@@ -56,17 +56,17 @@ type UserAccountMgmt struct {
 	database *leveldb.DB
 }
 
-func (uam *UserAccountMgmt)getUserLock(user common.Address) *sync.RWMutex {
-	lock,ok := uam.lock[user]
-	if ok{
+func (uam *UserAccountMgmt) getUserLock(user common.Address) *sync.RWMutex {
+	lock, ok := uam.lock[user]
+	if ok {
 		return lock
 	}
 
 	uam.glock.Lock()
 	defer uam.glock.Unlock()
 
-	lock,ok = uam.lock[user]
-	if ok{
+	lock, ok = uam.lock[user]
+	if ok {
 		return lock
 	}
 
@@ -76,16 +76,16 @@ func (uam *UserAccountMgmt)getUserLock(user common.Address) *sync.RWMutex {
 	return lock
 }
 
-func (uam *UserAccountMgmt)getDbLock(key string) *sync.RWMutex  {
-	lock,ok:=uam.dblock[key]
-	if ok{
+func (uam *UserAccountMgmt) getDbLock(key string) *sync.RWMutex {
+	lock, ok := uam.dblock[key]
+	if ok {
 		return lock
 	}
 	uam.glock.Lock()
 	defer uam.glock.Unlock()
 
-	lock,ok=uam.dblock[key]
-	if ok{
+	lock, ok = uam.dblock[key]
+	if ok {
 		return lock
 	}
 
