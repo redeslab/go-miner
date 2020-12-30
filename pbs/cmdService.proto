@@ -6,6 +6,13 @@ option go_package = ".;pbs";
 service CmdService {
     rpc ShowUserCounter (UserCounterReq) returns (CounterResult) {}
     rpc SetLogLevel (LogLevel) returns (CommonResponse) {}
+    rpc ShowAccessAddr (EmptyRequest) returns (CommonResponse) {}
+    rpc ShowWebPort  (EmptyRequest) returns (CommonResponse) {}
+    rpc AccessAddressMgmt (AccessAddress) returns (CommonResponse) {}
+    rpc WebPortSet (WebPort) returns (CommonResponse) {}
+}
+
+message EmptyRequest {
 }
 
 message UserCounterReq {
@@ -25,3 +32,14 @@ message LogLevel{
     string Module = 1;
     int32  Level  = 2;
 }
+
+message AccessAddress{
+    string Adddr = 1;
+    int32  op = 2;
+}
+
+message WebPort{
+    int32 Port = 1;
+}
+
+

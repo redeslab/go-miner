@@ -16,6 +16,7 @@ import (
 	"github.com/hyperorchidlab/go-miner-pool/network"
 	"github.com/hyperorchidlab/pirate_contract/config"
 	"github.com/op/go-logging"
+	"math/big"
 	"net"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ var (
 type Node struct {
 	subAddr     account.ID
 	poolAddr    common.Address
+	payerAddr   common.Address
 	poolNetAddr string
 	poolConn    *net.UDPConn
 	poolChan    chan *microchain.MinerMicroTx
@@ -39,6 +41,14 @@ type Node struct {
 	database    *leveldb.DB
 	uam         *UserAccountMgmt
 	quit        chan struct{}
+}
+
+type NodeIns struct {
+	SubAddr    account.ID
+	PoolAddr   common.Address
+	PayerAddr  common.Address
+	Database   *leveldb.DB
+	UAM        *UserAccountMgmt
 }
 
 func SrvNode() *Node {
@@ -55,7 +65,7 @@ func newNode() *Node {
 		EthConfig: config.EthConfig{Market: SysConf.MicroPaySys, NetworkID: SysConf.NetworkID, EthApiUrl: SysConf.EthApiUrl, Token: SysConf.Token},
 	}
 
-	pool, err := GetPoolAddr(sa.ToArray(), cfg)
+	pool, payeraddr, err := GetPoolAddr(sa.ToArray(), cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -81,6 +91,9 @@ func newNode() *Node {
 	}
 
 	bc := basc.NewBasCli(SysConf.BAS)
+	fmt.Printf("%s\n", "===")
+	fmt.Printf("%p\n", *pool)
+	fmt.Printf("%s\n", "===")
 	naddr, err := bc.Query((*pool)[:])
 	if err != nil {
 		panic(err)
@@ -96,6 +109,7 @@ func newNode() *Node {
 	n := &Node{
 		subAddr:     sa,
 		poolAddr:    *pool,
+		payerAddr:   *payeraddr,
 		poolNetAddr: string(naddr.NetAddr),
 		poolChan:    make(chan *microchain.MinerMicroTx, 1024),
 		srvConn:     c,
@@ -527,4 +541,30 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 	}
 
 	return ua, find, nil
+}
+
+func (n *Node) GetNodeIns() *NodeIns {
+	return &NodeIns{
+		SubAddr:   n.subAddr,
+		PoolAddr:  n.poolAddr,
+		PayerAddr: n.payerAddr,
+		Database:  n.database,
+		UAM:       n.uam,
+	}
+}
+
+func (n *Node) GetUserCount() int {
+	return n.uam.GetUserCount()
+}
+
+func (n *Node) GetUsers() []common.Address {
+	return n.uam.GetUsers()
+}
+
+func (n *Node) GetUserAccount(addr common.Address) *UserAccount {
+	return n.uam.GetUserAccount(addr)
+}
+
+func (n *Node) GetMinerCredit() *big.Int {
+	return n.uam.GetMinerCredit()
 }
