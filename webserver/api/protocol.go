@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/hyperorchidlab/go-miner/webserver/session"
 	"io/ioutil"
 	"net/http"
 )
@@ -53,11 +54,11 @@ func doRequest(r *http.Request, v interface{}) (*Request, *Response) {
 		return nil, resp
 	}
 
-	//if !session.IsValidBase58(req.AccessToken) {
-	//	resp.ResultCode = SessErr
-	//	resp.Message = "not a correct session"
-	//	return nil, resp
-	//}
+	if !session.IsValidBase58(req.AccessToken) {
+		resp.ResultCode = SessErr
+		resp.Message = "not a correct session"
+		return nil, resp
+	}
 
 	resp.ResultCode = Success
 	resp.Message = "success"
