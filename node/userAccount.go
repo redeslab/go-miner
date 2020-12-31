@@ -378,7 +378,7 @@ func (uam *UserAccountMgmt)ShowAllUser() string  {
 
 	for k,v:=range uam.users{
 		msg += fmt.Sprintf("user:%s\r\n",k.String())
-		msg +=fmt.Sprintf("%s\r\n",v.String())
+		msg += fmt.Sprintf("%s\r\n",v.String())
 	}
 
 	return msg
