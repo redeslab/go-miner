@@ -399,9 +399,9 @@ func (uam *UserAccountMgmt) GetUserCount() int {
 }
 
 func (uam *UserAccountMgmt) GetUserAccount(address common.Address) *UserAccount {
-	ualock := uam.lock[address]
-	ualock.Lock()
-	defer ualock.Unlock()
+	ualock := uam.getUserLock(address)
+	ualock.RLock()
+	defer ualock.RUnlock()
 
 	ua, ok := uam.users[address]
 	if !ok {
