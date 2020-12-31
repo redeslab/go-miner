@@ -60,6 +60,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 			Token:       common.HexToAddress("0xad44c8493de3fe2b070f33927a315b50da9a0e25"),
 		},
 		BAS: "167.179.75.39",
+		WebPort: node.WebPort,
 	}
 
 	byt, err := json.MarshalIndent(defaultSys, "", "\t")

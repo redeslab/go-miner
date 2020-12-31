@@ -71,7 +71,7 @@ var ShowOneReceipt = &cobra.Command{
 
 
 func init() {
-	rootCmd.AddCommand(ShowCmd)
+	//rootCmd.AddCommand(ShowCmd)
 	ShowCmd.AddCommand(ShowAddrCmd)
 	ShowCmd.AddCommand(ShowCounterCmd)
 	ShowCmd.AddCommand(ShowAllUser)

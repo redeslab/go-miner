@@ -11,6 +11,15 @@ service CmdService {
     rpc ShowOneUser (UserInfoReq) returns (CommonResponse) {}
     rpc ShowOneReceipt (ReceiptOneReq) returns (CommonResponse) {}
     rpc ShowLatestReceipt (ReceiptReq) returns (CommonResponse) {}
+
+    rpc ShowAccessAddr (EmptyRequest) returns (CommonResponse) {}
+    rpc ShowWebPort  (EmptyRequest) returns (CommonResponse) {}
+    rpc AccessAddressMgmt (AccessAddress) returns (CommonResponse) {}
+    rpc WebPortSet (WebPort) returns (CommonResponse) {}
+}
+
+message EmptyRequest {
+
 }
 
 message UserCounterReq {
@@ -48,3 +57,14 @@ message LogLevel{
     string Module = 1;
     int32  Level  = 2;
 }
+
+message AccessAddress{
+    string Adddr = 1;
+    int32  op = 2;
+}
+
+message WebPort{
+    int32 Port = 1;
+}
+
+
