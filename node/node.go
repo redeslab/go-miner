@@ -518,3 +518,7 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	return ua, find, nil
 }
+
+func (n *Node)UserManagement() *UserAccountMgmt  {
+	return n.uam
+}

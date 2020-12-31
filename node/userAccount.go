@@ -105,6 +105,7 @@ const (
 	DBPoolMicroTxKeyPatternEnd        = "DBPoolMicroTx_0xffffffffffffffffffff"
 )
 
+
 func NewUserAccMgmt(db *leveldb.DB, pool common.Address) *UserAccountMgmt {
 	return &UserAccountMgmt{
 		poolAddr: pool,
@@ -366,4 +367,132 @@ func (uam *UserAccountMgmt) loadFromDB() {
 		ua.TotalTraffic = dbtx.UsedTraffic
 		ua.UptoPoolTraffic = dbtx.MinerCredit
 	}
+}
+
+func (uam *UserAccountMgmt)ShowAllUser() string  {
+
+	msg := fmt.Sprintf("user count: %d\r\n",len(uam.users))
+
+	for k,v:=range uam.users{
+		msg += fmt.Sprintf("user:%s\r\n",k.String())
+		msg +=fmt.Sprintf("%s\r\n",v.String())
+	}
+
+	return msg
+}
+
+func (uam *UserAccountMgmt)getDBUserKeyStart(user common.Address) string  {
+	return fmt.Sprintf(DBUserMicroTXHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+}
+
+func (uam *UserAccountMgmt)getDBUserKeyEnd(user common.Address) string  {
+	return uam.getDBUserKeyStart(user)+"_999999999999999999999999999999999"
+}
+
+func (uam *UserAccountMgmt)getDBPoolKeyStart(user common.Address) string  {
+	return fmt.Sprintf(DBPoolMicroTxHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+}
+
+func (uam *UserAccountMgmt)getDBPoolKeyEnd(user common.Address) string  {
+	return uam.getDBUserKeyStart(user)+"_999999999999999999999999999999999"
+}
+
+func (uam *UserAccountMgmt)ShowAllReceipt(user common.Address, report int) string  {
+	start := ""
+	end := ""
+	if report == 0{
+		start = uam.getDBUserKeyStart(user)
+		end = uam.getDBUserKeyEnd(user)
+	}else{
+		start = uam.getDBPoolKeyStart(user)
+		end = uam.getDBPoolKeyEnd(user)
+	}
+
+	msg := "user: "+ user.String() + "\n=======================================\r\n"
+
+	r := &util.Range{Start: []byte(start), Limit: []byte(end)}
+
+	iter := uam.database.NewIterator(r, nil)
+	defer iter.Release()
+	for iter.Next() {
+		dbtx := &microchain.DBMicroTx{}
+		json.Unmarshal(iter.Value(), dbtx)
+		msg += dbtx.String()+"\r\n======================================="
+	}
+	return msg
+}
+
+func (uam *UserAccountMgmt)ShowUser(user common.Address) string  {
+	locker:=uam.getUserLock(user)
+	locker.RLock()
+	defer locker.RUnlock()
+
+	msg := ""
+
+	if ua,ok:=uam.users[user];!ok{
+		msg += "not found"
+	}else{
+		msg += ua.String()
+	}
+	return msg
+}
+
+func (uam *UserAccountMgmt)ShowReceipt(user common.Address,credit string,report int) string  {
+	key := ""
+
+	c:=&big.Int{}
+	c.SetString(credit,10)
+
+	if report == 0{
+		key = uam.DBUserMicroTXKeyGet(user,c)
+	}else{
+		key = uam.DBPoolMicroTxKeyGet(user,c)
+	}
+
+	dbtx := &microchain.DBMicroTx{}
+
+	com.GetJsonObj(uam.database,[]byte(key),dbtx)
+
+	return dbtx.String()
+
+}
+
+func (uam *UserAccountMgmt)ShowLatestReceipt(user common.Address,report int) string  {
+	start := ""
+	end := ""
+	if report == 0{
+		start = uam.getDBUserKeyStart(user)
+		end = uam.getDBUserKeyEnd(user)
+	}else{
+		start = uam.getDBPoolKeyStart(user)
+		end = uam.getDBPoolKeyEnd(user)
+	}
+
+	msg := "user: "+ user.String() + "\n=======================================\r\n"
+
+	r := &util.Range{Start: []byte(start), Limit: []byte(end)}
+
+	iter := uam.database.NewIterator(r, nil)
+	defer iter.Release()
+
+	var maxitem *microchain.DBMicroTx
+
+	for iter.Next() {
+		dbtx := &microchain.DBMicroTx{}
+		json.Unmarshal(iter.Value(), dbtx)
+
+		if maxitem == nil{
+			maxitem = dbtx
+			continue
+		}
+		if dbtx.MinerCredit.Cmp(maxitem.MinerCredit) >0{
+			maxitem = dbtx
+		}
+		//msg += dbtx.String()+"\r\n======================================="
+	}
+	if maxitem == nil{
+		return "not found"
+	}
+	msg += maxitem.String()
+	return msg
 }
