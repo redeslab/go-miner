@@ -34,6 +34,10 @@ build:
 pbs:
 	cd pbs/ && $(MAKE)
 
+resdir := ./webserver
+webfs:
+	go-bindata -o $(resdir)/webfs/webfs.go -pkg=webfs $(resdir)/html/dist/...
+
 mac:
 	GOOS=darwin go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).mac
 arm:

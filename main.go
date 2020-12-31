@@ -5,6 +5,7 @@ import (
 	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"github.com/hyperorchidlab/go-miner/node"
 	"github.com/hyperorchidlab/go-miner/pbs"
+	"github.com/hyperorchidlab/go-miner/webserver"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -52,6 +53,8 @@ func init() {
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
+	rootCmd.AddCommand(ShowCmd)
+	rootCmd.AddCommand(WebAccessAddrCmd)
 }
 
 func main() {
@@ -69,6 +72,7 @@ func mainRun(_ *cobra.Command, _ []string) {
 	}
 
 	node.InitMinerNode(param.password, param.CMDPort)
+	node.InitEthConfig()
 
 	n := node.SrvNode()
 	com.NewThreadWithID("[TCP Service Thread]", n.Mining, func(err interface{}) {
@@ -80,6 +84,8 @@ func mainRun(_ *cobra.Command, _ []string) {
 	}, func(err interface{}) {
 		panic(err)
 	}).Start()
+
+	go webserver.StartWebDaemon()
 
 	done := make(chan bool, 1)
 	go waitSignal(done)
@@ -102,6 +108,7 @@ func waitSignal(done chan bool) {
 	sig := <-sigCh
 
 	node.SrvNode().Stop()
+	webserver.StopWebDaemon()
 	fmt.Printf("\n>>>>>>>>>>process finished(%s)<<<<<<<<<<\n", sig)
 
 	done <- true

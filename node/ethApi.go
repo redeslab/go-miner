@@ -49,14 +49,14 @@ import (
 //
 //
 
-func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Address, err error) {
+func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Address, payeraddr *common.Address, err error) {
 	if cfg == nil {
-		return nil, errors.New("eth config error")
+		return nil, nil, errors.New("eth config error")
 	}
 
 	mc, err := cfg.NewClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer mc.Close()
 
@@ -65,27 +65,31 @@ func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Addres
 
 	iter, err := mc.FilterMinerEvent(nil, ms, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var pool *common.Address
+	var payaddr *common.Address
 
 	for iter.Next() {
 		ev := iter.Event
 		if ev.EventType == 0 {
 			pool = &ev.Addr1
+			payaddr = &ev.PayAddr
 		}
 
 		if ev.EventType == 1 {
 			pool = &ev.Addr2
+			payaddr = &ev.PayAddr
 		}
 
 		if ev.EventType == 2 {
 			pool = nil
+			payaddr = nil
 		}
 	}
 
-	return pool, nil
+	return pool, payaddr, nil
 
 }
 

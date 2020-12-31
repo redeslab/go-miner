@@ -17,12 +17,13 @@ import (
 )
 
 type UserAccount struct {
-	TokenBalance   *big.Int
-	TrafficBalance *big.Int
-	TotalTraffic   *big.Int
+	UserAddress    common.Address
+	TokenBalance   *big.Int//total recharge
+	TrafficBalance *big.Int//recharge to traffic
+	TotalTraffic   *big.Int//used in pool
 
 	UptoPoolTraffic *big.Int
-	MinerCredit     *big.Int
+	MinerCredit     *big.Int//used in miner
 
 	PoolRefused bool
 }
@@ -360,10 +361,59 @@ func (uam *UserAccountMgmt) loadFromDB() {
 
 		dbtx := &microchain.DBMicroTx{}
 		json.Unmarshal(iter.Value(), dbtx)
+		//fmt.Println("uam load from db: dbtx is", dbtx.String())
+		ua.UserAddress = user
 		ua.MinerCredit = dbtx.MinerCredit
 		ua.TrafficBalance = dbtx.TrafficBalance
 		ua.TokenBalance = dbtx.TokenBalance
 		ua.TotalTraffic = dbtx.UsedTraffic
 		ua.UptoPoolTraffic = dbtx.MinerCredit
 	}
+}
+
+func (uam *UserAccountMgmt) GetMinerCredit() *big.Int {
+	cred := &big.Int{}
+	for _, data := range uam.users {
+		if data.MinerCredit != nil {
+			cred.Add(cred, data.MinerCredit)
+		}
+	}
+	return cred
+}
+
+func (uam *UserAccountMgmt) GetUsers() (users []common.Address) {
+	if uam.users == nil {
+		return users
+	}
+	for _, ua := range uam.users {
+		users = append(users, ua.UserAddress)
+	}
+	return
+}
+
+func (uam *UserAccountMgmt) GetUserCount() int {
+	if uam.users == nil {
+		return 0
+	}
+	return len(uam.users)
+}
+
+func (uam *UserAccountMgmt) GetUserAccount(address common.Address) *UserAccount {
+	ualock := uam.lock[address]
+	ualock.Lock()
+	defer ualock.Unlock()
+
+	ua, ok := uam.users[address]
+	if !ok {
+		return nil
+	}
+
+	uas := NewUserAccount()
+	uas.UserAddress = address
+	uas.TokenBalance.Add(uas.TokenBalance, ua.TokenBalance)
+	uas.TotalTraffic.Add(uas.TotalTraffic, ua.TotalTraffic)
+	uas.TrafficBalance.Add(uas.TrafficBalance, ua.TrafficBalance)
+	uas.MinerCredit.Add(uas.MinerCredit, ua.MinerCredit)
+
+	return uas
 }
