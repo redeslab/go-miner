@@ -42,33 +42,32 @@ var ShowAllUser = &cobra.Command{
 }
 
 var ShowOneUser = &cobra.Command{
-	Use: "user",
+	Use:   "user",
 	Short: "show user detail info",
 	Long:  `TODO::.`,
 	Run:   showOneuser,
 }
 
 var ShowAllReceipt = &cobra.Command{
-	Use: "allreceipt",
+	Use:   "allreceipt",
 	Short: "show all receipt of user",
 	Long:  `TODO::.`,
 	Run:   showAllReceipt,
 }
 
 var ShowLatestReceipt = &cobra.Command{
-	Use: "latestreceipt",
+	Use:   "latestreceipt",
 	Short: "show latest receipt of user",
 	Long:  `TODO::.`,
 	Run:   showLatestReceipt,
 }
 
 var ShowOneReceipt = &cobra.Command{
-	Use: "receipt",
+	Use:   "receipt",
 	Short: "show a receipt of user",
 	Long:  `TODO::.`,
 	Run:   showoneReceipt,
 }
-
 
 func init() {
 	//rootCmd.AddCommand(ShowCmd)
@@ -82,14 +81,14 @@ func init() {
 
 	ShowCounterCmd.Flags().StringVarP(&param.user, "user",
 		"u", "", "User's main address to show")
-	ShowOneUser.Flags().StringVarP(&param.user,"user","u","","User's main address")
-	ShowAllReceipt.Flags().StringVarP(&param.user,"user","u","","user's main address")
-	ShowAllReceipt.Flags().IntVarP(&param.report,"report","r",0,"show report to pool tx, set 1, local tx set to 0")
-	ShowLatestReceipt.Flags().StringVarP(&param.user,"user","u","","user's main address")
-	ShowLatestReceipt.Flags().IntVarP(&param.report,"report","r",0,"show report to pool tx, set 1, local tx set to 0")
-	ShowOneReceipt.Flags().StringVarP(&param.user,"user","u","","user's main address")
-	ShowOneReceipt.Flags().IntVarP(&param.report,"report","r",0,"show report to pool tx, set 1, local tx set to 0")
-	ShowOneReceipt.Flags().StringVarP(&param.credit,"credit","c","","miner credit number of a receipt")
+	ShowOneUser.Flags().StringVarP(&param.user, "user", "u", "", "User's main address")
+	ShowAllReceipt.Flags().StringVarP(&param.user, "user", "u", "", "user's main address")
+	ShowAllReceipt.Flags().IntVarP(&param.report, "report", "r", 0, "show report to pool tx, set 1, local tx set to 0")
+	ShowLatestReceipt.Flags().StringVarP(&param.user, "user", "u", "", "user's main address")
+	ShowLatestReceipt.Flags().IntVarP(&param.report, "report", "r", 0, "show report to pool tx, set 1, local tx set to 0")
+	ShowOneReceipt.Flags().StringVarP(&param.user, "user", "u", "", "user's main address")
+	ShowOneReceipt.Flags().IntVarP(&param.report, "report", "r", 0, "show report to pool tx, set 1, local tx set to 0")
+	ShowOneReceipt.Flags().StringVarP(&param.credit, "credit", "c", "", "miner credit number of a receipt")
 
 }
 func showAddr(_ *cobra.Command, _ []string) {
@@ -120,122 +119,120 @@ func showCounter(_ *cobra.Command, _ []string) {
 
 func showAlluser(_ *cobra.Command, _ []string) {
 	c := DialToCmdService()
-	msg,err:=c.ShowAlluser(context.TODO(),&pbs.EmptyReq{})
-	if err!=nil{
+	msg, err := c.ShowAlluser(context.TODO(), &pbs.EmptyReq{})
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(msg)
+	fmt.Println(msg.Msg)
 }
 
-func showOneuser(_ *cobra.Command, _ []string)  {
-	if param.user == ""{
+func showOneuser(_ *cobra.Command, _ []string) {
+	if param.user == "" {
 		fmt.Println("please enter user address")
 		return
 	}
 
-	c:=DialToCmdService()
-	msg,err:=c.ShowOneUser(context.TODO(),&pbs.UserInfoReq{
+	c := DialToCmdService()
+	msg, err := c.ShowOneUser(context.TODO(), &pbs.UserInfoReq{
 		User: param.user,
 	})
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(msg)
+	fmt.Println(msg.Msg)
 
 }
 
-func showAllReceipt(_ *cobra.Command, _ []string)  {
-	if param.user == ""{
+func showAllReceipt(_ *cobra.Command, _ []string) {
+	if param.user == "" {
 		fmt.Println("please enter user address")
 		return
 	}
 
-	if param.report != 0 && param.report != 1{
+	if param.report != 0 && param.report != 1 {
 		fmt.Println("report must set 0 or 1")
 		return
 	}
 
-	c:=DialToCmdService()
-	msg,err:=c.ShowAllReceipt(context.TODO(),&pbs.ReceiptReq{
-		User: param.user,
+	c := DialToCmdService()
+	msg, err := c.ShowAllReceipt(context.TODO(), &pbs.ReceiptReq{
+		User:   param.user,
 		Report: int32(param.report),
 	})
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(msg)
+	fmt.Println(msg.Msg)
 
 }
 
-func showLatestReceipt(_ *cobra.Command, _ []string)  {
-	if param.user == ""{
+func showLatestReceipt(_ *cobra.Command, _ []string) {
+	if param.user == "" {
 		fmt.Println("please enter user address")
 		return
 	}
 
-	if param.report != 0 && param.report != 1{
+	if param.report != 0 && param.report != 1 {
 		fmt.Println("report must set 0 or 1")
 		return
 	}
 
-	c:=DialToCmdService()
-	msg,err:=c.ShowLatestReceipt(context.TODO(),&pbs.ReceiptReq{
-		User: param.user,
+	c := DialToCmdService()
+	msg, err := c.ShowLatestReceipt(context.TODO(), &pbs.ReceiptReq{
+		User:   param.user,
 		Report: int32(param.report),
 	})
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(msg)
+	fmt.Println(msg.Msg)
 
 }
 
-func showoneReceipt(_ *cobra.Command, _ []string)  {
-	if param.user == ""{
+func showoneReceipt(_ *cobra.Command, _ []string) {
+	if param.user == "" {
 		fmt.Println("please enter user address")
 		return
 	}
 
-	if param.report != 0 && param.report != 1{
+	if param.report != 0 && param.report != 1 {
 		fmt.Println("report must set 0 or 1")
 		return
 	}
 
-	if param.credit == ""{
+	if param.credit == "" {
 		fmt.Println("please enter credit number")
 		return
 	}
 
-	z:=&big.Int{}
-	if _,ok:=z.SetString(param.credit,10);!ok{
+	z := &big.Int{}
+	if _, ok := z.SetString(param.credit, 10); !ok {
 		fmt.Println("please enter correct credit number")
 		return
 	}
 
-
-	c:=DialToCmdService()
-	msg,err:=c.ShowOneReceipt(context.TODO(),&pbs.ReceiptOneReq{
-		User: param.user,
+	c := DialToCmdService()
+	msg, err := c.ShowOneReceipt(context.TODO(), &pbs.ReceiptOneReq{
+		User:   param.user,
 		Report: int32(param.report),
 		Credit: param.credit,
 	})
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println(msg)
+	fmt.Println(msg.Msg)
 
 }
-
 
 func (s *cmdService) ShowUserCounter(ctx context.Context, req *pbs.UserCounterReq) (result *pbs.CounterResult, err error) {
 	b := node.SrvNode().ShowUserBucket(req.User)
@@ -259,52 +256,52 @@ func (s *cmdService) SetLogLevel(ctx context.Context, req *pbs.LogLevel) (result
 	return nil, nil
 }
 
-func (s *cmdService)ShowAlluser(context.Context, *pbs.EmptyReq) (*pbs.CommonResponse, error)  {
+func (s *cmdService) ShowAlluser(context.Context, *pbs.EmptyReq) (*pbs.CommonResponse, error) {
 	msg := node.SrvNode().UserManagement().ShowAllUser()
 
 	return &pbs.CommonResponse{
 		Msg: msg,
-	},nil
+	}, nil
 }
 
-func (s *cmdService)ShowOneUser(c context.Context,r *pbs.UserInfoReq) (*pbs.CommonResponse, error)  {
+func (s *cmdService) ShowOneUser(c context.Context, r *pbs.UserInfoReq) (*pbs.CommonResponse, error) {
 
-	uaddr:=common.HexToAddress(r.User)
-
-	msg:=node.SrvNode().UserManagement().ShowUser(uaddr)
-
-	return &pbs.CommonResponse{
-		Msg: msg,
-	},nil
-
-}
-
-func (s *cmdService)ShowAllReceipt(c context.Context, r *pbs.ReceiptReq) (*pbs.CommonResponse, error) {
 	uaddr := common.HexToAddress(r.User)
 
-	msg:=node.SrvNode().UserManagement().ShowAllReceipt(uaddr,int(r.Report))
+	msg := node.SrvNode().UserManagement().ShowUser(uaddr)
 
 	return &pbs.CommonResponse{
 		Msg: msg,
-	},nil
+	}, nil
+
+}
+
+func (s *cmdService) ShowAllReceipt(c context.Context, r *pbs.ReceiptReq) (*pbs.CommonResponse, error) {
+	uaddr := common.HexToAddress(r.User)
+
+	msg := node.SrvNode().UserManagement().ShowAllReceipt(uaddr, int(r.Report))
+
+	return &pbs.CommonResponse{
+		Msg: msg,
+	}, nil
 }
 
 func (s *cmdService) ShowLatestReceipt(c context.Context, r *pbs.ReceiptReq) (*pbs.CommonResponse, error) {
 	uaddr := common.HexToAddress(r.User)
 
-	msg:=node.SrvNode().UserManagement().ShowLatestReceipt(uaddr,int(r.Report))
+	msg := node.SrvNode().UserManagement().ShowLatestReceipt(uaddr, int(r.Report))
 
 	return &pbs.CommonResponse{
 		Msg: msg,
-	},nil
+	}, nil
 }
 
-func (s *cmdService)ShowOneReceipt(c context.Context, r *pbs.ReceiptOneReq) (*pbs.CommonResponse, error)  {
+func (s *cmdService) ShowOneReceipt(c context.Context, r *pbs.ReceiptOneReq) (*pbs.CommonResponse, error) {
 	uaddr := common.HexToAddress(r.User)
-	msg:=node.SrvNode().UserManagement().ShowReceipt(uaddr,r.Credit,int(r.Report))
+	msg := node.SrvNode().UserManagement().ShowReceipt(uaddr, r.Credit, int(r.Report))
 
 	return &pbs.CommonResponse{
 		Msg: msg,
-	},nil
+	}, nil
 
 }

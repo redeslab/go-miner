@@ -27,8 +27,8 @@ var param struct {
 	basIP    string
 	user     string
 	location string
-	report int
-	credit string
+	report   int
+	credit   string
 }
 
 var rootCmd = &cobra.Command{

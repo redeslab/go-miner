@@ -50,9 +50,9 @@ type UserReqParam struct {
 }
 
 type UserListInfo struct {
-	Count    int `json:"count"`
-	PageSize int            `json:"page_size"`
-	PageNum  int            `json:"page_num"`
+	Count    int              `json:"count"`
+	PageSize int              `json:"page_size"`
+	PageNum  int              `json:"page_num"`
 	Users    []*MinerUserInfo `json:"users"`
 }
 
@@ -88,7 +88,7 @@ func (uim *UsersInfoInMiner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			ud := &MinerUserInfo{
-				MainAddr: uas.UserAddress.String(),
+				MainAddr:       uas.UserAddress.String(),
 				HopBalance:     util.Float2String(util.BalanceHuman(uas.TokenBalance), 4),
 				TrafficBalance: util.Float2String(util2.TrafficGBytes(uas.TrafficBalance), 2),
 				TotalTraffic:   util.Float2String(util2.TrafficGBytes(uas.TotalTraffic), 2),

@@ -14,7 +14,6 @@ import (
 )
 
 type MinerInfo struct {
-
 }
 
 type MinerDesc struct {
