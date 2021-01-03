@@ -168,11 +168,14 @@ func (cf *Conf) Save() error {
 		return err
 	}
 
-	if err := json.Unmarshal(confData, cf); err != nil {
+	conf := &Conf{}
+	if err := json.Unmarshal(confData, conf); err != nil {
 		return err
 	}
 
-	j, _ := json.MarshalIndent(cf, " ", "\t")
+	conf.AccessPubKey = cf.AccessPubKey
+	conf.WebPort = cf.WebPort
+	j, _ := json.MarshalIndent(conf, " ", "\t")
 
 	return util.Save2File(j, PathSetting.ConfPath)
 }
