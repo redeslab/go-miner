@@ -17,7 +17,7 @@ import (
 	"syscall"
 )
 
-var hopVersion string = "0.2"
+var hopVersion string = "1.0.2_gr"
 
 var param struct {
 	version  bool
@@ -27,6 +27,8 @@ var param struct {
 	basIP    string
 	user     string
 	location string
+	report   int
+	credit   string
 }
 
 var rootCmd = &cobra.Command{

@@ -6,6 +6,12 @@ option go_package = ".;pbs";
 service CmdService {
     rpc ShowUserCounter (UserCounterReq) returns (CounterResult) {}
     rpc SetLogLevel (LogLevel) returns (CommonResponse) {}
+    rpc ShowAlluser (EmptyReq) returns (CommonResponse) {}
+    rpc ShowAllReceipt(ReceiptReq) returns (CommonResponse) {}
+    rpc ShowOneUser (UserInfoReq) returns (CommonResponse) {}
+    rpc ShowOneReceipt (ReceiptOneReq) returns (CommonResponse) {}
+    rpc ShowLatestReceipt (ReceiptReq) returns (CommonResponse) {}
+
     rpc ShowAccessAddr (EmptyRequest) returns (CommonResponse) {}
     rpc ShowWebPort  (EmptyRequest) returns (CommonResponse) {}
     rpc AccessAddressMgmt (AccessAddress) returns (CommonResponse) {}
@@ -13,6 +19,7 @@ service CmdService {
 }
 
 message EmptyRequest {
+
 }
 
 message UserCounterReq {
@@ -22,6 +29,24 @@ message UserCounterReq {
 message CounterResult {
     int32 id = 1;
     int32 bucket = 2;
+}
+
+message EmptyReq {
+}
+
+message ReceiptReq{
+    string user = 1;
+    int32 report = 2;
+}
+
+message ReceiptOneReq{
+    string user = 1;
+    string credit = 2;
+    int32 report = 3;
+}
+
+message UserInfoReq{
+    string user = 1;
 }
 
 message CommonResponse {

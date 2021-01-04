@@ -75,7 +75,6 @@ func Int64Time2String(t int64) string {
 //	oot.o = false
 //}
 
-
 func Save2File(data []byte, filename string) error {
 
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)

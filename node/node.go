@@ -43,11 +43,11 @@ type Node struct {
 }
 
 type NodeIns struct {
-	SubAddr    account.ID
-	PoolAddr   common.Address
-	PayerAddr  common.Address
-	Database   *leveldb.DB
-	UAM        *UserAccountMgmt
+	SubAddr   account.ID
+	PoolAddr  common.Address
+	PayerAddr common.Address
+	Database  *leveldb.DB
+	UAM       *UserAccountMgmt
 }
 
 func SrvNode() *Node {
@@ -533,6 +533,9 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 	return ua, find, nil
 }
 
+func (n *Node) UserManagement() *UserAccountMgmt {
+	return n.uam
+}
 func (n *Node) GetNodeIns() *NodeIns {
 	return &NodeIns{
 		SubAddr:   n.subAddr,

@@ -22,7 +22,7 @@ func addHandle(mux *http.ServeMux, webpath string, handler http.Handler) {
 	mux.Handle(webpath, handler)
 }
 
-func StartWebDaemon()  {
+func StartWebDaemon() {
 	mux := http.NewServeMux()
 
 	sp := node.PathSetting
@@ -41,8 +41,8 @@ func StartWebDaemon()  {
 
 	log.Println("Miner Management Web Server Start at:", node.WebPort)
 
-	webserver = &http.Server {
-		Addr: ":" + strconv.Itoa(node.WebPort),
+	webserver = &http.Server{
+		Addr:    ":" + strconv.Itoa(node.WebPort),
 		Handler: mux,
 	}
 
@@ -50,7 +50,7 @@ func StartWebDaemon()  {
 	log.Println(webserver.ListenAndServe())
 }
 
-func StopWebDaemon()  {
+func StopWebDaemon() {
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	webserver.Shutdown(ctx)
 

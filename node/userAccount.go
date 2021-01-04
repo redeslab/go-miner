@@ -18,12 +18,12 @@ import (
 
 type UserAccount struct {
 	UserAddress    common.Address
-	TokenBalance   *big.Int//total recharge
-	TrafficBalance *big.Int//recharge to traffic
-	TotalTraffic   *big.Int//used in pool
+	TokenBalance   *big.Int //total recharge
+	TrafficBalance *big.Int //recharge to traffic
+	TotalTraffic   *big.Int //used in pool
 
 	UptoPoolTraffic *big.Int
-	MinerCredit     *big.Int//used in miner
+	MinerCredit     *big.Int //used in miner
 
 	PoolRefused bool
 }
@@ -369,6 +369,178 @@ func (uam *UserAccountMgmt) loadFromDB() {
 		ua.TotalTraffic = dbtx.UsedTraffic
 		ua.UptoPoolTraffic = dbtx.MinerCredit
 	}
+}
+
+func (uam *UserAccountMgmt) ShowAllUser() string {
+
+	msg := fmt.Sprintf("user count: %d\r\n", len(uam.users))
+
+	for k, v := range uam.users {
+		msg += fmt.Sprintf("user:%s\r\n", k.String())
+		msg += fmt.Sprintf("%s\r\n", v.String())
+	}
+
+	return msg
+}
+
+func (uam *UserAccountMgmt) getDBUserKeyStart(user common.Address) string {
+	return fmt.Sprintf(DBUserMicroTXHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+}
+
+func (uam *UserAccountMgmt) getDBUserKeyEnd(user common.Address) string {
+	return uam.getDBUserKeyStart(user) + "_999999999999999999999999999999999"
+}
+
+func (uam *UserAccountMgmt) getDBPoolKeyStart(user common.Address) string {
+	return fmt.Sprintf(DBPoolMicroTxHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+}
+
+func (uam *UserAccountMgmt) getDBPoolKeyEnd(user common.Address) string {
+	return uam.getDBPoolKeyStart(user) + "_999999999999999999999999999999999"
+}
+
+func (uam *UserAccountMgmt) ShowAllReceipt(user common.Address, report int) string {
+	start := ""
+	end := ""
+	if report == 0 {
+		start = uam.getDBUserKeyStart(user)
+		end = uam.getDBUserKeyEnd(user)
+	} else {
+		start = uam.getDBPoolKeyStart(user)
+		end = uam.getDBPoolKeyEnd(user)
+	}
+
+	msg := "user: " + user.String() + "\n=======================================\r\n"
+
+	r := &util.Range{Start: []byte(start), Limit: []byte(end)}
+
+	iter := uam.database.NewIterator(r, nil)
+	defer iter.Release()
+	for iter.Next() {
+		//fmt.Println("key------>",string(iter.Key()))
+		item := ""
+		if report == 0 {
+			dbtx := &microchain.MinerMicroTx{}
+			json.Unmarshal(iter.Value(), dbtx)
+			item = dbtx.String()
+		}
+
+		if report == 1 {
+			dbtx := &microchain.DBMicroTx{}
+			json.Unmarshal(iter.Value(), dbtx)
+			item = dbtx.String()
+		}
+
+		msg += item + "\r\n=======================================\r\n"
+	}
+	return msg
+}
+
+func (uam *UserAccountMgmt) ShowUser(user common.Address) string {
+	locker := uam.getUserLock(user)
+	locker.RLock()
+	defer locker.RUnlock()
+
+	msg := ""
+
+	if ua, ok := uam.users[user]; !ok {
+		msg += "not found"
+	} else {
+		msg += ua.String()
+	}
+	return msg
+}
+
+func (uam *UserAccountMgmt) ShowReceipt(user common.Address, credit string, report int) string {
+	key := ""
+
+	c := &big.Int{}
+	c.SetString(credit, 10)
+
+	msg := ""
+
+	if report == 0 {
+		key = uam.DBUserMicroTXKeyGet(user, c)
+		dbtx := &microchain.MinerMicroTx{}
+		com.GetJsonObj(uam.database, []byte(key), dbtx)
+		msg = dbtx.String()
+	} else {
+		key = uam.DBPoolMicroTxKeyGet(user, c)
+		dbtx := &microchain.DBMicroTx{}
+		com.GetJsonObj(uam.database, []byte(key), dbtx)
+		msg = dbtx.String()
+	}
+
+	return msg
+
+}
+
+func (uam *UserAccountMgmt) ShowLatestReceipt(user common.Address, report int) string {
+	start := ""
+	end := ""
+	if report == 0 {
+		start = uam.getDBUserKeyStart(user)
+		end = uam.getDBUserKeyEnd(user)
+	} else {
+		start = uam.getDBPoolKeyStart(user)
+		end = uam.getDBPoolKeyEnd(user)
+	}
+
+	msg := "user: " + user.String() + "\n=======================================\r\n"
+
+	r := &util.Range{Start: []byte(start), Limit: []byte(end)}
+
+	iter := uam.database.NewIterator(r, nil)
+	defer iter.Release()
+
+	var maxitem *microchain.DBMicroTx
+	var maxitem1 *microchain.MinerMicroTx
+
+	for iter.Next() {
+		//fmt.Println("key -->",string(iter.Key()))
+		if report == 1 {
+			dbtx := &microchain.DBMicroTx{}
+			json.Unmarshal(iter.Value(), dbtx)
+
+			if maxitem == nil {
+				maxitem = dbtx
+				continue
+			}
+			if dbtx.MinerCredit.Cmp(maxitem.MinerCredit) > 0 {
+				maxitem = dbtx
+			}
+		}
+
+		if report == 0 {
+			dbtx := &microchain.MinerMicroTx{}
+			json.Unmarshal(iter.Value(), dbtx)
+
+			if maxitem1 == nil {
+				maxitem1 = dbtx
+				continue
+			}
+			if dbtx.MinerCredit.Cmp(maxitem1.MinerCredit) > 0 {
+				maxitem1 = dbtx
+			}
+		}
+
+		//msg += dbtx.String()+"\r\n======================================="
+	}
+	if report == 1 && maxitem == nil {
+		return "not found"
+	}
+	if report == 0 && maxitem1 == nil {
+		return "not found"
+	}
+
+	if maxitem1 != nil {
+		msg += maxitem1.String()
+	}
+	if maxitem != nil {
+		msg += maxitem.String()
+	}
+
+	return msg
 }
 
 func (uam *UserAccountMgmt) GetMinerCredit() *big.Int {
