@@ -38,7 +38,7 @@ type PathConf struct {
 var accessPubKeyLock sync.Mutex
 
 type Conf struct {
-	BAS          string
+	BAS string
 	*com.EthereumConfig
 	WebPort      int      `json:"web_port,omitempty"`
 	AccessPubKey []string `json:"access_addr,omitempty"`
@@ -57,7 +57,7 @@ const (
 	LogFile        = "log.hop"
 	PidFile        = "pid.hop"
 	ConfFile       = "conf.hop"
-	WebPort        = 19577
+	WebPort        = 42888
 	LMCMD          = "cmd"
 )
 
@@ -235,7 +235,6 @@ func (cf *Conf) RemoveAccessAddr(addr string) error {
 
 	return nil
 }
-
 
 func (ss *Conf) GetAccessAddrs() string {
 	accessPubKeyLock.Lock()

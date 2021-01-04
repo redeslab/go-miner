@@ -59,7 +59,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 			MicroPaySys: common.HexToAddress("0x72d5f9f633f537f87ef7415b8bdbfa438d0a1a6c"),
 			Token:       common.HexToAddress("0xad44c8493de3fe2b070f33927a315b50da9a0e25"),
 		},
-		BAS: "167.179.75.39",
+		BAS:     "167.179.75.39",
 		WebPort: node.WebPort,
 	}
 
