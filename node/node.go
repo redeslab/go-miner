@@ -324,8 +324,12 @@ func (n *Node)ctrlMsg(buf []byte, addr net.Addr)  {
 	}
 	nodeLog.Debug("CtrlService raw data:", string(buf))
 	data := n.ctrlChanRecv(req)
-	j, _ := json.Marshal(*data)
-	n.ctrlChan.WriteTo(j, addr)
+	if j, ejson := json.Marshal(*data);ejson!=nil{
+		nodeLog.Debug("Marshal ctrlMsg data failed",data.String())
+		return
+	}else{
+		n.ctrlChan.WriteTo(j, addr)
+	}
 }
 
 func (n *Node) Mining(sig chan struct{}) {
