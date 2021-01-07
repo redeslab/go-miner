@@ -305,22 +305,27 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 func (n *Node) CtrlService(sig chan struct{}) {
 	for {
 		buf := make([]byte, 10240)
-		req := &MsgReq{}
+
 		nr, addr, err := n.ctrlChan.ReadFrom(buf)
 		if err != nil {
 			nodeLog.Warning("control channel error ", err)
 			continue
 		}
-		err = json.Unmarshal(buf[:nr], req)
-		if err != nil {
-			nodeLog.Warning("control channel bad request ", err)
-			continue
-		}
-		nodeLog.Debug("CtrlService raw data:", string(buf[:nr]))
-		data := n.ctrlChanRecv(req)
-		j, _ := json.Marshal(*data)
-		n.ctrlChan.WriteTo(j, addr)
+		go n.ctrlMsg(buf[:nr],addr)
 	}
+}
+
+func (n *Node)ctrlMsg(buf []byte, addr net.Addr)  {
+	req := &MsgReq{}
+	err := json.Unmarshal(buf, req)
+	if err != nil {
+		nodeLog.Warning("control channel bad request ", err)
+		return
+	}
+	nodeLog.Debug("CtrlService raw data:", string(buf))
+	data := n.ctrlChanRecv(req)
+	j, _ := json.Marshal(*data)
+	n.ctrlChan.WriteTo(j, addr)
 }
 
 func (n *Node) Mining(sig chan struct{}) {
