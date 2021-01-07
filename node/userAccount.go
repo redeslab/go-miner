@@ -253,6 +253,20 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 	ua.UptoPoolTraffic = credit //used to report left
 }
 
+func (uam *UserAccountMgmt)setUpToTraffic(user common.Address, traffic *big.Int)  {
+	locker := uam.getUserLock(user)
+	locker.Lock()
+	defer locker.Unlock()
+
+	ua, ok := uam.users[user]
+	if !ok {
+		nodeLog.Debug("unexpect ua not found %s",user.String())
+		return
+	}
+
+	ua.UptoPoolTraffic = traffic
+}
+
 func (uam *UserAccountMgmt) resetFromPool(user common.Address, sua *microchain.SyncUA) {
 	locker := uam.getUserLock(user)
 	locker.Lock()
@@ -313,7 +327,7 @@ func (uam *UserAccountMgmt) refuse(user common.Address) {
 	ua.PoolRefused = true
 }
 
-func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DBMicroTx {
+func (uam *UserAccountMgmt) getLatestPoolMicroTx(user common.Address) *microchain.DBMicroTx {
 
 	ua := uam.getUserAcc(user)
 	if ua == nil {
@@ -322,7 +336,7 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	key := uam.DBPoolMicroTxKeyGet(user, ua.UptoPoolTraffic)
 
-	nodeLog.Debug("get last Micro tx:", ua.String(), key)
+	nodeLog.Debug("get last pool Micro tx:", ua.String(), key)
 
 	locker := uam.getDbLock(key)
 	locker.RLock()
@@ -332,13 +346,38 @@ func (uam *UserAccountMgmt) getLatestMicroTx(user common.Address) *microchain.DB
 
 	err := com.GetJsonObj(uam.database, []byte(key), dbtx)
 	if err != nil {
+		nodeLog.Warning("get last pool micro tx failed:", ua.String(), err)
+		return nil
+	}
+
+	nodeLog.Debug("get last pool micro tx success", dbtx.String())
+	return dbtx
+}
+
+func (uam *UserAccountMgmt)getLastestMicroTx(user common.Address) *microchain.MinerMicroTx  {
+	ua:=uam.getUserAcc(user)
+	if ua == nil{
+		return nil
+	}
+
+	key := uam.DBUserMicroTXKeyGet(user,ua.MinerCredit)
+	locker := uam.getDbLock(key)
+	locker.RLock()
+	defer locker.RUnlock()
+
+	tx:=&microchain.MinerMicroTx{}
+
+	err:=com.GetJsonObj(uam.database,[]byte(key),tx)
+	if err!= nil{
 		nodeLog.Warning("get last micro tx failed:", ua.String(), err)
 		return nil
 	}
 
-	nodeLog.Debug("get last micro tx success", dbtx.String())
-	return dbtx
+	nodeLog.Debug("get last micro tx success", tx.String())
+	return tx
+
 }
+
 
 func (uam *UserAccountMgmt) loadFromDB() {
 	pattern := fmt.Sprintf(DBPoolMicroTxHead, SysConf.MicroPaySys.String(), uam.poolAddr.String())

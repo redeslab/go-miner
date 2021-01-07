@@ -17,7 +17,7 @@ import (
 	"syscall"
 )
 
-var hopVersion string = "1.0.2_gr"
+var hopVersion string = "1.0.3_gr"
 
 var param struct {
 	version  bool

@@ -195,6 +195,7 @@ func (n *Node) ReportTx(sig chan struct{}) {
 				if err := n.uam.savePoolMinerMicroTx(dbtx); err != nil {
 					nodeLog.Warning("save dbtx error" + dbtx.String())
 				}
+				n.uam.setUpToTraffic(tx.User,ptx.MinerCredit)
 			} else {
 				n.uam.refuse(tx.User)
 			}
@@ -278,16 +279,15 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			n.uam.resetFromPool(req.SMT.User, sua)
 		}
 
-		if ack.Data == nil {
-			dbtx := n.uam.getLatestMicroTx(req.SMT.User)
-			if dbtx != nil {
-				ack.Data = dbtx.MinerMicroTx
-			} else {
-				ack.Code = 2
-				ack.Msg = "no data"
-			}
+		mtx:=n.uam.getLastestMicroTx(req.SMT.User)
+		if mtx != nil && tx !=nil && mtx.MinerCredit.Cmp(tx.MinerCredit) > 0{
+			ack.Data = mtx
 		}
-		if ack.Data != nil {
+
+		if ack.Data == nil {
+			ack.Code = 2
+			ack.Msg = "no data"
+		}else{
 			ack.Code = 0
 			ack.Msg = "success"
 		}
@@ -483,6 +483,8 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 
 	if r.Code == 0 {
 		find = true
+	}else{
+		ptx = nil
 	}
 
 	nodeLog.Debug("receive ack micro tx from pool", r.String())
@@ -493,7 +495,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, err error) {
 	conn, err := n.dialPoolConn()
 	if err != nil {
-		panic(err)
+		return nil,false,err
 	}
 
 	defer conn.Close()
@@ -528,6 +530,8 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	if r.Code == 0 {
 		find = true
+	}else{
+		ua = nil
 	}
 
 	return ua, find, nil
