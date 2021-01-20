@@ -52,16 +52,25 @@ func initMiner(_ *cobra.Command, _ []string) {
 	}
 	fmt.Println("Create wallet success!")
 
-	defaultSys := &node.Conf{
-		EthereumConfig: &com.EthereumConfig{
-			NetworkID:   com.RopstenNetworkId,
-			EthApiUrl:   "https://ropsten.infura.io/v3/d64d364124684359ace20feae1f9ac20",
-			MicroPaySys: common.HexToAddress("0x72d5f9f633f537f87ef7415b8bdbfa438d0a1a6c"),
-			Token:       common.HexToAddress("0xad44c8493de3fe2b070f33927a315b50da9a0e25"),
-		},
+	defaultSys := &node.MinerConf{
 		BAS:     "167.179.75.39",
 		WebPort: node.WebPort,
 	}
+
+	defaultSys.ECfg[com.RopstenNetworkId] = &com.EthereumConfig{
+		NetworkID:   com.RopstenNetworkId,
+		EthApiUrl:   "https://ropsten.infura.io/v3/d64d364124684359ace20feae1f9ac20",
+		MicroPaySys: common.HexToAddress("0x72d5f9f633f537f87ef7415b8bdbfa438d0a1a6c"),
+		Token:       common.HexToAddress("0xad44c8493de3fe2b070f33927a315b50da9a0e25"),
+	}
+
+	defaultSys.ECfg[com.MainNetworkId] = &com.EthereumConfig{
+		NetworkID:   com.MainNetworkId,
+		EthApiUrl:   "https://mainnet.infura.io/v3/d64d364124684359ace20feae1f9ac20",
+		MicroPaySys: common.HexToAddress("0xBE085363bCE77AdEDa1fE49105502aC733CD4383"),
+		Token:       common.HexToAddress("0x1999ac2b141e6d5c4e27579b30f842078bc620b3"),
+	}
+
 
 	byt, err := json.MarshalIndent(defaultSys, "", "\t")
 	confPath := filepath.Join(baseDir, string(filepath.Separator), node.ConfFile)

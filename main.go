@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ import (
 var hopVersion string = "1.0.3_gr"
 
 var param struct {
+	debug bool
 	version  bool
 	CMDPort  string
 	password string
@@ -50,8 +52,9 @@ func init() {
 		"c", "42999", "Cmd service port")
 
 	//TODO:: mv to config file
-	rootCmd.Flags().StringVarP(&node.SysConf.BAS, "basIP",
-		"b", "108.61.223.99", "Bas IP")
+	rootCmd.Flags().StringVarP(&node.MinerSetting.BAS, "basIP",
+		"b", "167.179.75.39", "Bas IP")
+	rootCmd.Flags().BoolVarP(&param.debug,"debug","d",false,"true: ropsten, false: mainnet")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
@@ -73,7 +76,14 @@ func mainRun(_ *cobra.Command, _ []string) {
 		return
 	}
 
-	node.InitMinerNode(param.password, param.CMDPort)
+	networkid:=com.MainNetworkId
+	if param.debug{
+		networkid = com.RopstenNetworkId
+	}
+
+	log.Println("start at ",networkid, "network.....")
+
+	node.InitMinerNode(param.password, param.CMDPort,networkid)
 	node.InitEthConfig()
 
 	n := node.SrvNode()

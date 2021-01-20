@@ -33,7 +33,7 @@ func GetMinerDetail(ni *node.NodeIns) *MinerDesc {
 	//mss := microchain.ChainInst().GetAllMiners()
 	miner := ni.SubAddr.String()
 
-	basip := node.SysConf.BAS
+	basip := node.MinerSetting.BAS
 	basclient := basc.NewBasCli(basip)
 	ext, _, err := basclient.QueryExtend([]byte(miner))
 

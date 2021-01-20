@@ -127,7 +127,7 @@ func NewUserAccount() *UserAccount {
 }
 
 func (uam *UserAccountMgmt) dbMicroTxKeyGet(fmts string, user common.Address, credit *big.Int) string {
-	return fmt.Sprintf(fmts, SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String(), credit.String())
+	return fmt.Sprintf(fmts, MinerSetting.MicroPaySys.String(), uam.poolAddr.String(), user.String(), credit.String())
 }
 
 func (uam *UserAccountMgmt) DBUserMicroTXKeyGet(user common.Address, credit *big.Int) string {
@@ -380,7 +380,7 @@ func (uam *UserAccountMgmt)getLastestMicroTx(user common.Address) *microchain.Mi
 
 
 func (uam *UserAccountMgmt) loadFromDB() {
-	pattern := fmt.Sprintf(DBPoolMicroTxHead, SysConf.MicroPaySys.String(), uam.poolAddr.String())
+	pattern := fmt.Sprintf(DBPoolMicroTxHead, MinerSetting.MicroPaySys.String(), uam.poolAddr.String())
 
 	r := &util.Range{Start: []byte(pattern), Limit: []byte(DBPoolMicroTxKeyPatternEnd)}
 
@@ -423,7 +423,7 @@ func (uam *UserAccountMgmt) ShowAllUser() string {
 }
 
 func (uam *UserAccountMgmt) getDBUserKeyStart(user common.Address) string {
-	return fmt.Sprintf(DBUserMicroTXHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+	return fmt.Sprintf(DBUserMicroTXHead+"_%s", MinerSetting.MicroPaySys.String(), uam.poolAddr.String(), user.String())
 }
 
 func (uam *UserAccountMgmt) getDBUserKeyEnd(user common.Address) string {
@@ -431,7 +431,7 @@ func (uam *UserAccountMgmt) getDBUserKeyEnd(user common.Address) string {
 }
 
 func (uam *UserAccountMgmt) getDBPoolKeyStart(user common.Address) string {
-	return fmt.Sprintf(DBPoolMicroTxHead+"_%s", SysConf.MicroPaySys.String(), uam.poolAddr.String(), user.String())
+	return fmt.Sprintf(DBPoolMicroTxHead+"_%s", MinerSetting.MicroPaySys.String(), uam.poolAddr.String(), user.String())
 }
 
 func (uam *UserAccountMgmt) getDBPoolKeyEnd(user common.Address) string {

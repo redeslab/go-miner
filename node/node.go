@@ -61,7 +61,7 @@ func newNode() *Node {
 	sa := WInst().SubAddress()
 
 	cfg := &config.PlatEthConfig{
-		EthConfig: config.EthConfig{Market: SysConf.MicroPaySys, NetworkID: SysConf.NetworkID, EthApiUrl: SysConf.EthApiUrl, Token: SysConf.Token},
+		EthConfig: config.EthConfig{Market: MinerSetting.MicroPaySys, NetworkID: MinerSetting.NetworkID, EthApiUrl: MinerSetting.EthApiUrl, Token: MinerSetting.Token},
 	}
 
 	pool, payeraddr, err := GetPoolAddr(sa.ToArray(), cfg)
@@ -89,7 +89,7 @@ func newNode() *Node {
 		panic(err)
 	}
 
-	bc := basc.NewBasCli(SysConf.BAS)
+	bc := basc.NewBasCli(MinerSetting.BAS)
 	fmt.Printf("%s\n", "===")
 	fmt.Printf("%p\n", *pool)
 	fmt.Printf("%s\n", "===")

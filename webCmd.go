@@ -124,11 +124,11 @@ func changeWebPort(_ *cobra.Command, _ []string) {
 }
 
 func (s *cmdService) ShowAccessAddr(ctx context.Context, request *pbs.EmptyRequest) (*pbs.CommonResponse, error) {
-	return &pbs.CommonResponse{Msg: common.SysConf.GetAccessAddrs()}, nil
+	return &pbs.CommonResponse{Msg: common.MinerSetting.GetAccessAddrs()}, nil
 }
 
 func (s *cmdService) ShowWebPort(ctx context.Context, request *pbs.EmptyRequest) (*pbs.CommonResponse, error) {
-	return &pbs.CommonResponse{Msg: "web listen port: " + strconv.Itoa(common.SysConf.GetWebPort())}, nil
+	return &pbs.CommonResponse{Msg: "web listen port: " + strconv.Itoa(common.MinerSetting.GetWebPort())}, nil
 }
 
 func (s *cmdService) WebPortSet(ctx context.Context, req *pbs.WebPort) (*pbs.CommonResponse, error) {
@@ -136,13 +136,13 @@ func (s *cmdService) WebPortSet(ctx context.Context, req *pbs.WebPort) (*pbs.Com
 		return &pbs.CommonResponse{Msg: "port error, port range: [80:65535)"}, nil
 	}
 
-	if common.SysConf.GetWebPort() == int(req.Port) {
+	if common.MinerSetting.GetWebPort() == int(req.Port) {
 		return &pbs.CommonResponse{Msg: "setting port is same to current system web port"}, nil
 	}
 
-	common.SysConf.SetWebPort(int(req.Port))
+	common.MinerSetting.SetWebPort(int(req.Port))
 
-	e := common.SysConf.Save()
+	e := common.MinerSetting.Save()
 
 	if e == nil {
 		webserver.StopWebDaemon()
@@ -159,23 +159,23 @@ func (s *cmdService) AccessAddressMgmt(ctx context.Context, req *pbs.AccessAddre
 	msg := "command line error"
 
 	if req.Op == 1 {
-		err := common.SysConf.AddAccessAddr(req.Adddr)
+		err := common.MinerSetting.AddAccessAddr(req.Adddr)
 		if err != nil {
 			msg = err.Error()
 		} else {
 			msg = "add access address " + req.Adddr + " success"
-			e := common.SysConf.Save()
+			e := common.MinerSetting.Save()
 			if e != nil {
 				logger.Fatal("save setting error " + e.Error())
 			}
 		}
 	} else if req.Op == 2 {
-		err := common.SysConf.RemoveAccessAddr(req.Adddr)
+		err := common.MinerSetting.RemoveAccessAddr(req.Adddr)
 		if err != nil {
 			msg = err.Error()
 		} else {
 			msg = "remove access address " + req.Adddr + " success"
-			e := common.SysConf.Save()
+			e := common.MinerSetting.Save()
 			if e != nil {
 				logger.Fatal("save setting error " + e.Error())
 			}

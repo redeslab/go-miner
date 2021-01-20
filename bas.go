@@ -33,6 +33,8 @@ func init() {
 
 	BasCmd.Flags().StringVarP(&param.location, "location", "l", "", "set miner location")
 
+	//BasCmd.Flags().BoolVarP(&param.debug,"debug","d",false,"true: ropsten, false: mainnet")
+
 }
 
 func basReg(_ *cobra.Command, _ []string) {
@@ -75,12 +77,15 @@ func basReg(_ *cobra.Command, _ []string) {
 			fmt.Println("load config failed")
 			return
 		}
-		if err := json.Unmarshal(jsonStr, node.SysConf); err != nil {
+
+		conf := &node.MinerConf{}
+
+		if err := json.Unmarshal(jsonStr, conf); err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		basip = node.SysConf.BAS
+		basip = conf.BAS
 		if net.ParseIP(basip) == nil {
 			fmt.Println("bas ip from config file error")
 			return

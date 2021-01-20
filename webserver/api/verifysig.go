@@ -138,7 +138,7 @@ func verify(message string, sigstr string) bool {
 		return true
 	}
 
-	addrs := node.SysConf.GetAccessAddrs2()
+	addrs := node.MinerSetting.GetAccessAddrs2()
 	for _, addr := range addrs {
 		if raddr == addr {
 			return true

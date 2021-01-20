@@ -37,12 +37,23 @@ type PathConf struct {
 
 var accessPubKeyLock sync.Mutex
 
-type Conf struct {
+type SettingConf struct {
 	BAS string
 	*com.EthereumConfig
-	WebPort      int      `json:"web_port,omitempty"`
-	AccessPubKey []string `json:"access_addr,omitempty"`
-	//lock         sync.Mutex `json:"-"`
+	WebPort      int
+	AccessPubKey []string
+}
+
+type MinerConf struct {
+	BAS string		`json:"bas"`
+	ECfg map[int]*com.EthereumConfig
+	WebPort int `json:"web_port"`
+	AccessPubKey []string	`json:"access_pub_key"`
+}
+
+func (mc *MinerConf)String() string  {
+	j,_:=json.MarshalIndent(*mc," "," \t")
+	return string(j)
 }
 
 //type MinerConf struct {
@@ -62,7 +73,7 @@ const (
 )
 
 var CMDServicePort = "42999"
-var SysConf = &Conf{}
+var MinerSetting = &SettingConf{}
 var PathSetting = &PathConf{}
 
 func BaseDir() string {
@@ -122,29 +133,48 @@ func (pc *PathConf) InitPath() {
 }
 
 func InitEthConfig() {
-	if SysConf.EthereumConfig == nil {
+	if MinerSetting.EthereumConfig == nil {
 		panic("init sys setting first")
 	}
 
 	cfg := &config.SysEthConfig.EthConfig
-	cfg.Market = SysConf.EthereumConfig.MicroPaySys
-	cfg.Token = SysConf.EthereumConfig.Token
-	cfg.EthApiUrl = SysConf.EthereumConfig.EthApiUrl
-	cfg.NetworkID = SysConf.EthereumConfig.NetworkID
+	cfg.Market = MinerSetting.EthereumConfig.MicroPaySys
+	cfg.Token = MinerSetting.EthereumConfig.Token
+	cfg.EthApiUrl = MinerSetting.EthereumConfig.EthApiUrl
+	cfg.NetworkID = MinerSetting.EthereumConfig.NetworkID
 }
 
-func InitMinerNode(auth, port string) {
+func InitMinerNode(auth, port string, networkid int) {
 	PathSetting.InitPath()
 
 	jsonStr, err := ioutil.ReadFile(PathSetting.ConfPath)
 	if err != nil {
 		panic("Load config failed")
 	}
-	if err := json.Unmarshal(jsonStr, SysConf); err != nil {
+
+	mc:=&MinerConf{}
+
+	if err := json.Unmarshal(jsonStr, mc); err != nil {
 		panic(err)
 	}
 
-	fmt.Println(SysConf.String())
+	if networkid == com.MainNetworkId{
+		MinerSetting.NetworkID = com.MainNetworkId
+		MinerSetting.Token = mc.ECfg[com.MainNetworkId].Token
+		MinerSetting.EthApiUrl = mc.ECfg[com.MainNetworkId].EthApiUrl
+		MinerSetting.MicroPaySys = mc.ECfg[com.MainNetworkId].MicroPaySys
+	}else{
+		MinerSetting.NetworkID = com.RopstenNetworkId
+		MinerSetting.Token = mc.ECfg[com.RopstenNetworkId].Token
+		MinerSetting.EthApiUrl = mc.ECfg[com.RopstenNetworkId].EthApiUrl
+		MinerSetting.MicroPaySys = mc.ECfg[com.RopstenNetworkId].MicroPaySys
+	}
+
+	MinerSetting.BAS = mc.BAS
+	MinerSetting.WebPort = mc.WebPort
+	MinerSetting.AccessPubKey = mc.AccessPubKey
+
+	fmt.Println(mc.String())
 	if auth == "" {
 		fmt.Println("Password=>")
 		pw, err := terminal.ReadPassword(int(os.Stdin.Fd()))
@@ -162,13 +192,13 @@ func InitMinerNode(auth, port string) {
 	CMDServicePort = port
 }
 
-func (cf *Conf) Save() error {
+func (cf *SettingConf) Save() error {
 	confData, err := ioutil.ReadFile(PathSetting.ConfPath)
 	if err != nil {
 		return err
 	}
 
-	conf := &Conf{}
+	conf := &MinerConf{}
 	if err := json.Unmarshal(confData, conf); err != nil {
 		return err
 	}
@@ -180,22 +210,22 @@ func (cf *Conf) Save() error {
 	return util.Save2File(j, PathSetting.ConfPath)
 }
 
-func (cf *Conf) GetAccessAddrs2() []string {
+func (cf *SettingConf) GetAccessAddrs2() []string {
 	accessPubKeyLock.Lock()
 	defer accessPubKeyLock.Unlock()
 
 	return cf.AccessPubKey
 }
 
-func (cf *Conf) SetWebPort(webPort int) {
+func (cf *SettingConf) SetWebPort(webPort int) {
 	cf.WebPort = webPort
 }
 
-func (cf *Conf) GetWebPort() int {
+func (cf *SettingConf) GetWebPort() int {
 	return cf.WebPort
 }
 
-func (cf *Conf) AddAccessAddr(addr string) error {
+func (cf *SettingConf) AddAccessAddr(addr string) error {
 	accessPubKeyLock.Lock()
 	defer accessPubKeyLock.Unlock()
 
@@ -208,7 +238,7 @@ func (cf *Conf) AddAccessAddr(addr string) error {
 	return nil
 }
 
-func (cf *Conf) RemoveAccessAddr(addr string) error {
+func (cf *SettingConf) RemoveAccessAddr(addr string) error {
 	accessPubKeyLock.Lock()
 	defer accessPubKeyLock.Unlock()
 
@@ -236,7 +266,7 @@ func (cf *Conf) RemoveAccessAddr(addr string) error {
 	return nil
 }
 
-func (ss *Conf) GetAccessAddrs() string {
+func (ss *SettingConf) GetAccessAddrs() string {
 	accessPubKeyLock.Lock()
 	defer accessPubKeyLock.Unlock()
 
