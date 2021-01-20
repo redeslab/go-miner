@@ -67,7 +67,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 	defaultSys.ECfg[com.MainNetworkId] = &com.EthereumConfig{
 		NetworkID:   com.MainNetworkId,
 		EthApiUrl:   "https://mainnet.infura.io/v3/d64d364124684359ace20feae1f9ac20",
-		MicroPaySys: common.HexToAddress("0xBE085363bCE77AdEDa1fE49105502aC733CD4383"),
+		MicroPaySys: common.HexToAddress("0x5eC8589C8832AdE0B45C608681bbaCEF517E7caD"),
 		Token:       common.HexToAddress("0x1999ac2b141e6d5c4e27579b30f842078bc620b3"),
 	}
 
