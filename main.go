@@ -49,7 +49,7 @@ func init() {
 		"p", "", "Password to unlock miner")
 
 	rootCmd.Flags().StringVarP(&param.CMDPort, "cmdPort",
-		"c", "42999", "Cmd service port")
+		"c", "42778", "Cmd service port")
 
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.MinerSetting.BAS, "basIP",
