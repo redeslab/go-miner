@@ -55,6 +55,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 	defaultSys := &node.MinerConf{
 		BAS:     "167.179.75.39",
 		WebPort: node.WebPort,
+		ECfg: make(map[int]*com.EthereumConfig),
 	}
 
 	defaultSys.ECfg[com.RopstenNetworkId] = &com.EthereumConfig{

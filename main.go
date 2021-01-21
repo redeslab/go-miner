@@ -18,7 +18,7 @@ import (
 	"syscall"
 )
 
-var hopVersion string = "1.0.3_gr"
+var hopVersion string = "1.0.3m_gr"
 
 var param struct {
 	debug bool
@@ -85,6 +85,8 @@ func mainRun(_ *cobra.Command, _ []string) {
 
 	node.InitMinerNode(param.password, param.CMDPort,networkid)
 	node.InitEthConfig()
+
+	fmt.Println("eth config: ====>",node.MinerSetting.String())
 
 	n := node.SrvNode()
 	com.NewThreadWithID("[TCP Service Thread]", n.Mining, func(err interface{}) {

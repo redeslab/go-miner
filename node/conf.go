@@ -68,12 +68,12 @@ const (
 	LogFile        = "log.hop"
 	PidFile        = "pid.hop"
 	ConfFile       = "conf.hop"
-	WebPort        = 42888
+	WebPort        = 42777
 	LMCMD          = "cmd"
 )
 
-var CMDServicePort = "42999"
-var MinerSetting = &SettingConf{}
+var CMDServicePort = "42778"
+var MinerSetting = &SettingConf{EthereumConfig:&com.EthereumConfig{}}
 var PathSetting = &PathConf{}
 
 func BaseDir() string {
