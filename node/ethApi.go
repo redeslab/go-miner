@@ -89,6 +89,10 @@ func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Addres
 		}
 	}
 
+	if pool == nil || payaddr == nil{
+		return nil,nil,errors.New("not found pool and payer")
+	}
+
 	return pool, payaddr, nil
 
 }

@@ -68,7 +68,7 @@ const (
 	LogFile        = "log.hop"
 	PidFile        = "pid.hop"
 	ConfFile       = "conf.hop"
-	WebPort        = 42777
+	WebPort        = 42887
 	LMCMD          = "cmd"
 )
 
