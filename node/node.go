@@ -9,10 +9,12 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/common"
 	basc "github.com/hyperorchidlab/BAS/client"
+	"github.com/hyperorchidlab/BAS/dbSrv"
 	"github.com/hyperorchidlab/go-miner-pool/account"
 	com "github.com/hyperorchidlab/go-miner-pool/common"
 	"github.com/hyperorchidlab/go-miner-pool/microchain"
 	"github.com/hyperorchidlab/go-miner-pool/network"
+	"github.com/hyperorchidlab/go-miner/bas"
 	"github.com/hyperorchidlab/pirate_contract/config"
 	"github.com/op/go-logging"
 	"math/big"
@@ -117,6 +119,10 @@ func newNode() *Node {
 		database:    db,
 		uam:         uam,
 		quit:        make(chan struct{}, 16),
+	}
+
+	if err:=n.CheckVersion();err!=nil{
+		panic(err)
 	}
 
 	com.NewThreadWithID("[report thread]", n.ReportTx, func(err interface{}) {
@@ -573,4 +579,64 @@ func (n *Node) GetUserAccount(addr common.Address) *UserAccount {
 
 func (n *Node) GetMinerCredit() *big.Int {
 	return n.uam.GetMinerCredit()
+}
+
+func (n *Node)CheckVersion() error  {
+	cnt:=0
+	for{
+		if err:=n.checkVersion();err!=nil{
+			cnt ++
+			if cnt > 5 {
+				return err
+			}
+		}else{
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func (n *Node)checkVersion() error  {
+	client:=basc.NewBasCli(MinerSetting.BAS)
+	ba:=n.subAddr.ToArray()
+	ext,nw,err:=client.QueryExtend(ba[:])
+	if err!=nil{
+		if bascerr,ok:=err.(*basc.BascErr);ok{
+			if bascerr.Code == basc.NoItemErr{
+				panic(err)
+			}else{
+				return err
+			}
+		}else{
+			return err
+		}
+	}
+
+	extd:=&bas.MinerExtendData{}
+	err = json.Unmarshal([]byte(ext), extd)
+	if err != nil {
+		return err
+	}
+
+	if extd.Version == HopVersion && extd.PoolAddr == n.poolAddr.String(){
+		return nil
+	}
+
+	extd.Version = HopVersion
+	extd.PoolAddr = n.poolAddr.String()
+
+	req:=&dbSrv.RegRequest{
+		BlockAddr: []byte(n.subAddr.String()),
+		SignData:dbSrv.SignData{
+			NetworkAddr:nw,
+			ExtData: extd.Marshal(),
+		},
+	}
+
+	req.Sig = WInst().SignJSONSub(req.SignData)
+	if err := basc.RegisterBySrvIP(req,MinerSetting.BAS);err!=nil{
+		return err
+	}
+
+	return nil
 }

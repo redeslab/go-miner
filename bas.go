@@ -66,6 +66,7 @@ func basReg(_ *cobra.Command, _ []string) {
 	extData.HopAddr = node.WInst().SubAddress().String()
 	extData.MainAddr = node.WInst().MainAddress().String()
 	extData.Location = param.location
+	extData.Version = node.HopVersion
 
 	basip := param.basIP
 

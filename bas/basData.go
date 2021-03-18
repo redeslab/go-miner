@@ -6,6 +6,8 @@ type MinerExtendData struct {
 	MainAddr string `json:"main_addr"`
 	HopAddr  string `json:"hop_addr"`
 	Location string `json:"location"`
+	PoolAddr string `json:"pool_addr,omitempty"`
+	Version  string `json:"version,omitempty"`
 }
 
 func (med *MinerExtendData) Marshal() string {

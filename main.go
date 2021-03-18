@@ -18,7 +18,7 @@ import (
 	"syscall"
 )
 
-var hopVersion string = "1.1.5"
+
 
 var param struct {
 	debug bool
@@ -72,7 +72,7 @@ func main() {
 func mainRun(_ *cobra.Command, _ []string) {
 
 	if param.version {
-		fmt.Println("Hop version: ", hopVersion)
+		fmt.Println("Hop version: ", node.HopVersion)
 		return
 	}
 
