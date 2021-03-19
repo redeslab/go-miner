@@ -598,8 +598,11 @@ func (n *Node)CheckVersion() error  {
 
 func (n *Node)checkVersion() error  {
 	client:=basc.NewBasCli(MinerSetting.BAS)
-	ba:=n.subAddr.ToArray()
-	ext,nw,err:=client.QueryExtend(ba[:])
+	ba:=n.subAddr.String()
+
+	fmt.Println("ba ----->",ba)
+
+	ext,nw,err:=client.QueryExtend([]byte(ba))
 	if err!=nil{
 		if bascerr,ok:=err.(*basc.BascErr);ok{
 			if bascerr.Code == basc.NoItemErr{

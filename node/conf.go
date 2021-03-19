@@ -74,7 +74,7 @@ const (
 	LMCMD          = "cmd"
 )
 
-var CMDServicePort = "42778"
+var CMDServicePort = "42776"
 var MinerSetting = &SettingConf{EthereumConfig:&com.EthereumConfig{}}
 var PathSetting = &PathConf{}
 
