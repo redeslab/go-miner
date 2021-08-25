@@ -121,7 +121,7 @@ func newNode() *Node {
 		quit:        make(chan struct{}, 16),
 	}
 
-	if err:=n.CheckVersion();err!=nil{
+	if err := n.CheckVersion(); err != nil {
 		panic(err)
 	}
 
@@ -201,7 +201,7 @@ func (n *Node) ReportTx(sig chan struct{}) {
 				if err := n.uam.savePoolMinerMicroTx(dbtx); err != nil {
 					nodeLog.Warning("save dbtx error" + dbtx.String())
 				}
-				n.uam.setUpToTraffic(tx.User,ptx.MinerCredit)
+				n.uam.setUpToTraffic(tx.User, ptx.MinerCredit)
 			} else {
 				n.uam.refuse(tx.User)
 			}
@@ -285,15 +285,15 @@ func (n *Node) ctrlChanRecv(req *MsgReq) *MsgAck {
 			n.uam.resetFromPool(req.SMT.User, sua)
 		}
 
-		mtx:=n.uam.getLastestMicroTx(req.SMT.User)
-		if mtx != nil && tx !=nil && mtx.MinerCredit.Cmp(tx.MinerCredit) > 0{
+		mtx := n.uam.getLastestMicroTx(req.SMT.User)
+		if mtx != nil && tx != nil && mtx.MinerCredit.Cmp(tx.MinerCredit) > 0 {
 			ack.Data = mtx
 		}
 
 		if ack.Data == nil {
 			ack.Code = 2
 			ack.Msg = "no data"
-		}else{
+		} else {
 			ack.Code = 0
 			ack.Msg = "success"
 		}
@@ -317,11 +317,11 @@ func (n *Node) CtrlService(sig chan struct{}) {
 			nodeLog.Warning("control channel error ", err)
 			continue
 		}
-		go n.ctrlMsg(buf[:nr],addr)
+		go n.ctrlMsg(buf[:nr], addr)
 	}
 }
 
-func (n *Node)ctrlMsg(buf []byte, addr net.Addr)  {
+func (n *Node) ctrlMsg(buf []byte, addr net.Addr) {
 	req := &MsgReq{}
 	err := json.Unmarshal(buf, req)
 	if err != nil {
@@ -330,10 +330,10 @@ func (n *Node)ctrlMsg(buf []byte, addr net.Addr)  {
 	}
 	nodeLog.Debug("CtrlService raw data:", string(buf))
 	data := n.ctrlChanRecv(req)
-	if j, ejson := json.Marshal(*data);ejson!=nil{
-		nodeLog.Debug("Marshal ctrlMsg data failed",data.String())
+	if j, ejson := json.Marshal(*data); ejson != nil {
+		nodeLog.Debug("Marshal ctrlMsg data failed", data.String())
 		return
-	}else{
+	} else {
 		n.ctrlChan.WriteTo(j, addr)
 	}
 }
@@ -408,9 +408,18 @@ func (n *Node) newWorker(conn net.Conn) {
 	b := n.buckets.addPipe(req.MainAddr)
 	cConn := network.NewCounterConn(aesConn, b)
 
-	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s", b.BID, prob.Target, cConn.RemoteAddr().String())
+	var peerMaxPacketSize = prob.MaxPacketSize
+	if peerMaxPacketSize == 0 {
+		peerMaxPacketSize = ConnectionBufSize
+	}
+	nodeLog.Debugf("Setup pipe[bid=%d] for:[%s] from:%s with peer max size=%d",
+		b.BID,
+		prob.Target,
+		cConn.RemoteAddr().String(),
+		peerMaxPacketSize)
+
 	com.NewThread(func(sig chan struct{}) {
-		buffer := make([]byte, ConnectionBufSize)
+		buffer := make([]byte, peerMaxPacketSize)
 		for {
 			no, err := cConn.Read(buffer)
 			if err != nil && no == 0 {
@@ -425,7 +434,7 @@ func (n *Node) newWorker(conn net.Conn) {
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
 	}).Start()
-	buffer := make([]byte, ConnectionBufSize)
+	buffer := make([]byte, peerMaxPacketSize)
 	for {
 		no, err := tgtConn.Read(buffer)
 		if err != nil && no == 0 {
@@ -498,7 +507,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 
 	if r.Code == 0 {
 		find = true
-	}else{
+	} else {
 		ptx = nil
 	}
 
@@ -510,7 +519,7 @@ func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bo
 func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, err error) {
 	conn, err := n.dialPoolConn()
 	if err != nil {
-		return nil,false,err
+		return nil, false, err
 	}
 
 	defer conn.Close()
@@ -545,7 +554,7 @@ func (n *Node) SyncUa(user common.Address) (ua *microchain.SyncUA, find bool, er
 
 	if r.Code == 0 {
 		find = true
-	}else{
+	} else {
 		ua = nil
 	}
 
@@ -581,63 +590,63 @@ func (n *Node) GetMinerCredit() *big.Int {
 	return n.uam.GetMinerCredit()
 }
 
-func (n *Node)CheckVersion() error  {
-	cnt:=0
-	for{
-		if err:=n.checkVersion();err!=nil{
-			cnt ++
+func (n *Node) CheckVersion() error {
+	cnt := 0
+	for {
+		if err := n.checkVersion(); err != nil {
+			cnt++
 			if cnt > 5 {
 				return err
 			}
-		}else{
+		} else {
 			return nil
 		}
 		time.Sleep(time.Second)
 	}
 }
 
-func (n *Node)checkVersion() error  {
-	client:=basc.NewBasCli(MinerSetting.BAS)
-	ba:=n.subAddr.String()
+func (n *Node) checkVersion() error {
+	client := basc.NewBasCli(MinerSetting.BAS)
+	ba := n.subAddr.String()
 
-	fmt.Println("ba ----->",ba)
+	fmt.Println("ba ----->", ba)
 
-	ext,nw,err:=client.QueryExtend([]byte(ba))
-	if err!=nil{
-		if bascerr,ok:=err.(*basc.BascErr);ok{
-			if bascerr.Code == basc.NoItemErr{
+	ext, nw, err := client.QueryExtend([]byte(ba))
+	if err != nil {
+		if bascerr, ok := err.(*basc.BascErr); ok {
+			if bascerr.Code == basc.NoItemErr {
 				panic(err)
-			}else{
+			} else {
 				return err
 			}
-		}else{
+		} else {
 			return err
 		}
 	}
 
-	extd:=&bas.MinerExtendData{}
+	extd := &bas.MinerExtendData{}
 	err = json.Unmarshal([]byte(ext), extd)
 	if err != nil {
 		return err
 	}
 
-	if extd.Version == HopVersion && extd.PoolAddr == n.poolAddr.String(){
+	if extd.Version == HopVersion && extd.PoolAddr == n.poolAddr.String() {
 		return nil
 	}
 
 	extd.Version = HopVersion
 	extd.PoolAddr = n.poolAddr.String()
 
-	req:=&dbSrv.RegRequest{
+	req := &dbSrv.RegRequest{
 		BlockAddr: []byte(n.subAddr.String()),
-		SignData:dbSrv.SignData{
-			NetworkAddr:nw,
-			ExtData: extd.Marshal(),
+		SignData: dbSrv.SignData{
+			NetworkAddr: nw,
+			ExtData:     extd.Marshal(),
 		},
 	}
 
 	req.Sig = WInst().SignJSONSub(req.SignData)
-	if err := basc.RegisterBySrvIP(req,MinerSetting.BAS);err!=nil{
+	if err := basc.RegisterBySrvIP(req, MinerSetting.BAS); err != nil {
 		return err
 	}
 
