@@ -28,7 +28,8 @@ type SetupReq struct {
 }
 
 type ProbeReq struct {
-	Target string
+	Target        string `json:"Target"`
+	MaxPacketSize int    `json:"MaxPacketSize,omitempty"`
 }
 
 func (sr *SetupReq) Verify() bool {
