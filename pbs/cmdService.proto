@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package pbs;
-option go_package = ".;pbs";
+option go_package = "github.com/hyperorchidlab/go-miner/pbs;pbs";
 
 service CmdService {
     rpc ShowUserCounter (UserCounterReq) returns (CounterResult) {}
