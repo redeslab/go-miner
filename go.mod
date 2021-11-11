@@ -7,8 +7,7 @@ require (
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/ethereum/go-ethereum v1.10.1
-	github.com/golang/protobuf v1.5.1
-	github.com/hyperorchidlab/BAS v0.0.0-20210318073018-a726bd2ac305
+	github.com/hyperorchidlab/BAS v1.1.8
 	github.com/hyperorchidlab/go-miner-pool v0.0.0-20210318080955-aa70a42857ae
 	github.com/hyperorchidlab/pirate_contract v0.0.0-20210310051338-f9654b29bcef
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
