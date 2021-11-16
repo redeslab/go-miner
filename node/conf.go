@@ -47,14 +47,14 @@ type SettingConf struct {
 }
 
 type MinerConf struct {
-	BAS string		`json:"bas"`
-	ECfg map[int]*com.EthereumConfig
-	WebPort int `json:"web_port"`
-	AccessPubKey []string	`json:"access_pub_key"`
+	BAS          string `json:"bas"`
+	ECfg         map[int]*com.EthereumConfig
+	WebPort      int      `json:"web_port"`
+	AccessPubKey []string `json:"access_pub_key"`
 }
 
-func (mc *MinerConf)String() string  {
-	j,_:=json.MarshalIndent(*mc," "," \t")
+func (mc *MinerConf) String() string {
+	j, _ := json.MarshalIndent(*mc, " ", " \t")
 	return string(j)
 }
 
@@ -75,7 +75,7 @@ const (
 )
 
 var CMDServicePort = "42776"
-var MinerSetting = &SettingConf{EthereumConfig:&com.EthereumConfig{}}
+var MinerSetting = &SettingConf{EthereumConfig: &com.EthereumConfig{}}
 var PathSetting = &PathConf{}
 
 func BaseDir() string {
@@ -139,7 +139,7 @@ func InitEthConfig() {
 		panic("init sys setting first")
 	}
 
-	cfg := &config.SysEthConfig.EthConfig
+	cfg := &config.EthConf().EthConfig
 	cfg.Market = MinerSetting.EthereumConfig.MicroPaySys
 	cfg.Token = MinerSetting.EthereumConfig.Token
 	cfg.EthApiUrl = MinerSetting.EthereumConfig.EthApiUrl
@@ -154,18 +154,18 @@ func InitMinerNode(auth, port string, networkid int) {
 		panic("Load config failed")
 	}
 
-	mc:=&MinerConf{}
+	mc := &MinerConf{}
 
 	if err := json.Unmarshal(jsonStr, mc); err != nil {
 		panic(err)
 	}
 
-	if networkid == com.MainNetworkId{
+	if networkid == com.MainNetworkId {
 		MinerSetting.NetworkID = com.MainNetworkId
 		MinerSetting.Token = mc.ECfg[com.MainNetworkId].Token
 		MinerSetting.EthApiUrl = mc.ECfg[com.MainNetworkId].EthApiUrl
 		MinerSetting.MicroPaySys = mc.ECfg[com.MainNetworkId].MicroPaySys
-	}else{
+	} else {
 		MinerSetting.NetworkID = com.RopstenNetworkId
 		MinerSetting.Token = mc.ECfg[com.RopstenNetworkId].Token
 		MinerSetting.EthApiUrl = mc.ECfg[com.RopstenNetworkId].EthApiUrl
