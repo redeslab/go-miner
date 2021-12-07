@@ -5,6 +5,7 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/filter"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/op/go-logging"
 	basc "github.com/redeslab/BAS/client"
 	com "github.com/redeslab/go-miner-pool/common"
 	"github.com/redeslab/go-miner-pool/microchain"
@@ -15,10 +16,9 @@ import (
 )
 
 var (
-	mcInstance     *MicChain = nil
-	mcOnce         sync.Once
-	DBKeyMinerData = "%s_DB_KEY_MINER_DATA_FOR_POOL_%s_%s"
-	chainLog, _    = logging.GetLogger("chain")
+	mcInstance  *MicChain = nil
+	mcOnce      sync.Once
+	chainLog, _ = logging.GetLogger("chain")
 )
 
 type MicChain struct {
@@ -85,7 +85,7 @@ func newChain() *MicChain {
 	return mc
 }
 
-func (mc *MicChain) Sync(sig chan struct{}) {
+func (mc *MicChain) Sync(_ chan struct{}) {
 	r := &microchain.Receipt{}
 	for {
 		if err := mc.conn.ReadJsonMsg(r); err != nil {
@@ -99,7 +99,7 @@ func (mc *MicChain) Sync(sig chan struct{}) {
 		mc.saveReceipt(r)
 	}
 }
-func (mc *MicChain) KeepAlive(sig chan struct{}) {
+func (mc *MicChain) KeepAlive(_ chan struct{}) {
 	for {
 		select {
 		case <-time.After(30 * time.Second):
@@ -110,6 +110,6 @@ func (mc *MicChain) KeepAlive(sig chan struct{}) {
 	}
 }
 
-func (mc *MicChain) saveReceipt(r *microchain.Receipt) {
+func (mc *MicChain) saveReceipt(_ *microchain.Receipt) {
 	//TODO::make a Merckle tree
 }

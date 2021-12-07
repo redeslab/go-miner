@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/op/go-logging"
 	"github.com/redeslab/go-miner-pool/account"
 	com "github.com/redeslab/go-miner-pool/common"
 	"github.com/redeslab/go-miner-pool/microchain"
@@ -61,7 +62,7 @@ func newNode() *Node {
 	return n
 }
 
-func (n *Node) TestService(sig chan struct{}) {
+func (n *Node) TestService(_ chan struct{}) {
 	buffer := make([]byte, 1024)
 	for {
 		_, a, e := n.pingSrv.ReadFromUDP(buffer)
@@ -77,7 +78,7 @@ func (n *Node) TestService(sig chan struct{}) {
 	}
 }
 
-func (n *Node) Mining(sig chan struct{}) {
+func (n *Node) Mining(_ chan struct{}) {
 	defer n.srvConn.Close()
 	for {
 		conn, err := n.srvConn.Accept()
@@ -97,8 +98,6 @@ func (n *Node) Mining(sig chan struct{}) {
 func (n *Node) Stop() {
 	_ = n.srvConn.Close()
 }
-
-const BUFFER_SIZE = 1 << 20
 
 func (n *Node) newWorker(conn net.Conn) {
 	log.Debug("new conn:", conn.RemoteAddr().String())
