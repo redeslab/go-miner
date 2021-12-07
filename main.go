@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	com "github.com/hyperorchidlab/go-miner-pool/common"
-	"github.com/hyperorchidlab/go-miner/node"
-	"github.com/hyperorchidlab/go-miner/pbs"
+	com "github.com/redeslab/go-miner-pool/common"
+	"github.com/redeslab/go-miner/node"
+	"github.com/redeslab/go-miner/pbs"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"syscall"
 )
-
 
 var hopVersion string = "0.2"
 

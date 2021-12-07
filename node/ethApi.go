@@ -2,9 +2,9 @@ package node
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/hyperorchidlab/go-miner-pool/account"
-	"github.com/hyperorchidlab/go-miner-pool/eth"
-	"github.com/hyperorchidlab/go-miner-pool/eth/generated"
+	"github.com/redeslab/go-miner-pool/account"
+	"github.com/redeslab/go-miner-pool/eth"
+	"github.com/redeslab/go-miner-pool/eth/generated"
 )
 
 func connect() (*generated.MicroPaySystem, error) {

@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	basc "github.com/hyperorchidlab/BAS/client"
-	"github.com/hyperorchidlab/BAS/crypto"
-	"github.com/hyperorchidlab/BAS/dbSrv"
-	"github.com/hyperorchidlab/go-miner/node"
+	basc "github.com/redeslab/BAS/client"
+	"github.com/redeslab/BAS/crypto"
+	"github.com/redeslab/BAS/dbSrv"
+	"github.com/redeslab/go-miner/node"
 	"github.com/spf13/cobra"
 )
 

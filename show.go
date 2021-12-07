@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/hyperorchidlab/go-miner-pool/account"
-	"github.com/hyperorchidlab/go-miner/node"
-	"github.com/hyperorchidlab/go-miner/pbs"
+	"github.com/redeslab/go-miner-pool/account"
+	"github.com/redeslab/go-miner/node"
+	"github.com/redeslab/go-miner/pbs"
 	"github.com/spf13/cobra"
 	"time"
 )
