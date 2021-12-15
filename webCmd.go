@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	common "github.com/hyperorchidlab/go-miner/node"
-	"github.com/hyperorchidlab/go-miner/pbs"
-	"github.com/hyperorchidlab/go-miner/webserver"
 	"github.com/op/go-logging"
+	common "github.com/redeslab/go-miner/node"
+	"github.com/redeslab/go-miner/pbs"
+	"github.com/redeslab/go-miner/webserver"
 	"github.com/spf13/cobra"
 	_ "google.golang.org/grpc"
 	"strconv"

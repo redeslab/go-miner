@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/hyperorchidlab/go-miner-pool/account"
-	com "github.com/hyperorchidlab/go-miner-pool/common"
-	"github.com/hyperorchidlab/go-miner/node"
+	"github.com/redeslab/go-miner-pool/account"
+	com "github.com/redeslab/go-miner-pool/common"
+	"github.com/redeslab/go-miner/node"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -55,7 +55,7 @@ func initMiner(_ *cobra.Command, _ []string) {
 	defaultSys := &node.MinerConf{
 		BAS:     "167.179.75.39",
 		WebPort: node.WebPort,
-		ECfg: make(map[int]*com.EthereumConfig),
+		ECfg:    make(map[int]*com.EthereumConfig),
 	}
 
 	defaultSys.ECfg[com.RopstenNetworkId] = &com.EthereumConfig{
@@ -71,7 +71,6 @@ func initMiner(_ *cobra.Command, _ []string) {
 		MicroPaySys: common.HexToAddress("0x5eC8589C8832AdE0B45C608681bbaCEF517E7caD"),
 		Token:       common.HexToAddress("0x1999ac2b141e6d5c4e27579b30f842078bc620b3"),
 	}
-
 
 	byt, err := json.MarshalIndent(defaultSys, "", "\t")
 	confPath := filepath.Join(baseDir, string(filepath.Separator), node.ConfFile)

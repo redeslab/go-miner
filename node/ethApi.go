@@ -3,7 +3,7 @@ package node
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/hyperorchidlab/pirate_contract/config"
+	"github.com/redeslab/pirate_contract/config"
 )
 
 //
@@ -89,8 +89,8 @@ func GetPoolAddr(miner [32]byte, cfg *config.PlatEthConfig) (addr *common.Addres
 		}
 	}
 
-	if pool == nil || payaddr == nil{
-		return nil,nil,errors.New("not found pool and payer")
+	if pool == nil || payaddr == nil {
+		return nil, nil, errors.New("not found pool and payer")
 	}
 
 	return pool, payaddr, nil

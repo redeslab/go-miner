@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	com "github.com/hyperorchidlab/go-miner-pool/common"
-	"github.com/hyperorchidlab/go-miner/node"
-	"github.com/hyperorchidlab/go-miner/pbs"
-	"github.com/hyperorchidlab/go-miner/webserver"
+	com "github.com/redeslab/go-miner-pool/common"
+	"github.com/redeslab/go-miner/node"
+	"github.com/redeslab/go-miner/pbs"
+	"github.com/redeslab/go-miner/webserver"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -18,10 +18,8 @@ import (
 	"syscall"
 )
 
-
-
 var param struct {
-	debug bool
+	debug    bool
 	version  bool
 	CMDPort  string
 	password string
@@ -54,7 +52,7 @@ func init() {
 	//TODO:: mv to config file
 	rootCmd.Flags().StringVarP(&node.MinerSetting.BAS, "basIP",
 		"b", "167.179.75.39", "Bas IP")
-	rootCmd.Flags().BoolVarP(&param.debug,"debug","d",false,"true: ropsten, false: mainnet")
+	rootCmd.Flags().BoolVarP(&param.debug, "debug", "d", false, "true: ropsten, false: mainnet")
 
 	rootCmd.AddCommand(InitCmd)
 	rootCmd.AddCommand(BasCmd)
@@ -76,17 +74,17 @@ func mainRun(_ *cobra.Command, _ []string) {
 		return
 	}
 
-	networkid:=com.MainNetworkId
-	if param.debug{
+	networkid := com.MainNetworkId
+	if param.debug {
 		networkid = com.RopstenNetworkId
 	}
 
-	log.Println("start at ",networkid, "network.....")
+	log.Println("start at ", networkid, "network.....")
 
-	node.InitMinerNode(param.password, param.CMDPort,networkid)
+	node.InitMinerNode(param.password, param.CMDPort, networkid)
 	node.InitEthConfig()
 
-	fmt.Println("eth config: ====>",node.MinerSetting.String())
+	fmt.Println("eth config: ====>", node.MinerSetting.String())
 
 	n := node.SrvNode()
 	com.NewThreadWithID("[TCP Service Thread]", n.Mining, func(err interface{}) {

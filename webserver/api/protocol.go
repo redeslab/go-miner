@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/hyperorchidlab/go-miner/webserver/session"
+	"github.com/redeslab/go-miner/webserver/session"
 	"io/ioutil"
 	"net/http"
 )

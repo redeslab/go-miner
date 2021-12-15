@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/hyperorchidlab/go-miner/webserver/session"
+	"github.com/redeslab/go-miner/webserver/session"
 	"net/http"
 )
 

@@ -2,9 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/hyperorchidlab/go-miner/node"
-	"github.com/hyperorchidlab/pirate_contract/util"
-	util2 "github.com/hyperorchidlab/pirate_contract/util"
+	"github.com/redeslab/go-miner/node"
+	"github.com/redeslab/pirate_contract/util"
+	util2 "github.com/redeslab/pirate_contract/util"
 	"net/http"
 )
 

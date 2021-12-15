@@ -7,9 +7,9 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/util"
 	"github.com/ethereum/go-ethereum/common"
-	com "github.com/hyperorchidlab/go-miner-pool/common"
-	"github.com/hyperorchidlab/go-miner-pool/microchain"
-	coutil "github.com/hyperorchidlab/pirate_contract/util"
+	com "github.com/redeslab/go-miner-pool/common"
+	"github.com/redeslab/go-miner-pool/microchain"
+	coutil "github.com/redeslab/pirate_contract/util"
 	"log"
 	"math/big"
 	"strings"
@@ -253,14 +253,14 @@ func (uam *UserAccountMgmt) resetCredit(user common.Address, credit *big.Int) {
 	ua.UptoPoolTraffic = credit //used to report left
 }
 
-func (uam *UserAccountMgmt)setUpToTraffic(user common.Address, traffic *big.Int)  {
+func (uam *UserAccountMgmt) setUpToTraffic(user common.Address, traffic *big.Int) {
 	locker := uam.getUserLock(user)
 	locker.Lock()
 	defer locker.Unlock()
 
 	ua, ok := uam.users[user]
 	if !ok {
-		nodeLog.Debug("unexpect ua not found %s",user.String())
+		nodeLog.Debug("unexpect ua not found %s", user.String())
 		return
 	}
 
@@ -354,21 +354,21 @@ func (uam *UserAccountMgmt) getLatestPoolMicroTx(user common.Address) *microchai
 	return dbtx
 }
 
-func (uam *UserAccountMgmt)getLastestMicroTx(user common.Address) *microchain.MinerMicroTx  {
-	ua:=uam.getUserAcc(user)
-	if ua == nil{
+func (uam *UserAccountMgmt) getLastestMicroTx(user common.Address) *microchain.MinerMicroTx {
+	ua := uam.getUserAcc(user)
+	if ua == nil {
 		return nil
 	}
 
-	key := uam.DBUserMicroTXKeyGet(user,ua.MinerCredit)
+	key := uam.DBUserMicroTXKeyGet(user, ua.MinerCredit)
 	locker := uam.getDbLock(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
-	tx:=&microchain.MinerMicroTx{}
+	tx := &microchain.MinerMicroTx{}
 
-	err:=com.GetJsonObj(uam.database,[]byte(key),tx)
-	if err!= nil{
+	err := com.GetJsonObj(uam.database, []byte(key), tx)
+	if err != nil {
 		nodeLog.Warning("get last micro tx failed:", ua.String(), err)
 		return nil
 	}
@@ -377,7 +377,6 @@ func (uam *UserAccountMgmt)getLastestMicroTx(user common.Address) *microchain.Mi
 	return tx
 
 }
-
 
 func (uam *UserAccountMgmt) loadFromDB() {
 	pattern := fmt.Sprintf(DBPoolMicroTxHead, MinerSetting.MicroPaySys.String(), uam.poolAddr.String())

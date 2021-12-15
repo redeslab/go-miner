@@ -2,8 +2,8 @@ package session
 
 import (
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/hyperorchidlab/go-miner/util"
-	"github.com/hyperorchidlab/go-miner/webserver/constant"
+	"github.com/redeslab/go-miner/util"
+	"github.com/redeslab/go-miner/webserver/constant"
 	"math/rand"
 	"sync"
 	"time"
