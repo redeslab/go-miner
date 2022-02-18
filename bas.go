@@ -97,7 +97,7 @@ func basReg(_ *cobra.Command, _ []string) {
 		BlockAddr: []byte(extData.HopAddr),
 		SignData: dbSrv.SignData{
 			NetworkAddr: &dbSrv.NetworkAddr{
-				NTyp:    t,
+				NTyp:    dbSrv.NetworkTyp(t),
 				NetAddr: []byte(param.minerIP),
 				BTyp:    crypto.HOP,
 			},
