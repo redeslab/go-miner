@@ -93,7 +93,7 @@ func newNode() *Node {
 
 	bc := basc.NewBasCli(MinerSetting.BAS)
 	fmt.Printf("%s\n", "===")
-	fmt.Printf("%p\n", *pool)
+	fmt.Printf("%s\n", *pool)
 	fmt.Printf("%s\n", "===")
 	naddr, err := bc.Query((*pool)[:])
 	if err != nil {
