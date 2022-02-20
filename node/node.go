@@ -365,8 +365,6 @@ func (n *Node) Stop() {
 	close(n.quit)
 }
 
-const BUFFER_SIZE = 1 << 20
-
 func (n *Node) newWorker(conn net.Conn) {
 	nodeLog.Debug("new conn:", conn.RemoteAddr().String())
 	_ = conn.(*net.TCPConn).SetKeepAlive(true)
@@ -429,9 +427,12 @@ func (n *Node) newWorker(conn net.Conn) {
 			if err != nil {
 				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
-			//nodeLog.Debug("write to target:", no)
+			nodeLog.Debug("write to target:", no)
 		}
 	}, func(err interface{}) {
+		if err != nil {
+			nodeLog.Warning("read from client and write to target failed", err)
+		}
 		_ = tgtConn.Close()
 	}).Start()
 	buffer := make([]byte, peerMaxPacketSize)
