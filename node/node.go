@@ -424,12 +424,12 @@ func (n *Node) newWorker(conn net.Conn) {
 				nodeLog.Warning("read from client failed", err, no)
 				panic(fmt.Errorf("Client->Proxy read err:%s", err))
 			}
-			wno, err := tgtConn.Write(buffer[:no])
+			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
 				nodeLog.Warning("write to target failed", err)
 				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
-			nodeLog.Debug("[bid=", b.BID, "] write to target:", no, wno)
+			//nodeLog.Debug("[bid=", b.BID, "] write to target:", no, wno)
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
