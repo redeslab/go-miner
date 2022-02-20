@@ -361,7 +361,7 @@ func (n *Node) Stop() {
 		n.poolConn.Close()
 	}
 
-	n.database.Close()
+	_ = n.database.Close()
 	close(n.quit)
 }
 
@@ -420,19 +420,18 @@ func (n *Node) newWorker(conn net.Conn) {
 		buffer := make([]byte, peerMaxPacketSize)
 		for {
 			no, err := cConn.Read(buffer)
-			if err != nil && no == 0 {
+			if err != nil || no == 0 {
+				nodeLog.Warning("read from client failed", err, no)
 				panic(fmt.Errorf("Client->Proxy read err:%s", err))
 			}
 			wno, err := tgtConn.Write(buffer[:no])
 			if err != nil {
+				nodeLog.Warning("write to target failed", err)
 				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
-			nodeLog.Debug("write to target:", no, wno)
+			nodeLog.Debug("[bid=", b.BID, "] write to target:", no, wno)
 		}
 	}, func(err interface{}) {
-		if err != nil {
-			nodeLog.Warning("read from client and write to target failed", err)
-		}
 		_ = tgtConn.Close()
 	}).Start()
 	buffer := make([]byte, peerMaxPacketSize)
