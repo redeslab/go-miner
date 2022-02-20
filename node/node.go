@@ -441,7 +441,7 @@ func (n *Node) newWorker(conn net.Conn) {
 
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			nodeLog.Warning("Proxy->Client write  err:", err)
+			nodeLog.Warning("Proxy->Client write  err:", err, no)
 			return
 		}
 	}
