@@ -138,12 +138,11 @@ func InitEthConfig() {
 	if MinerSetting.EthereumConfig == nil {
 		panic("init sys setting first")
 	}
-
-	cfg := &config.EthConf().EthConfig
-	cfg.Market = MinerSetting.EthereumConfig.MicroPaySys
-	cfg.Token = MinerSetting.EthereumConfig.Token
-	cfg.EthApiUrl = MinerSetting.EthereumConfig.EthApiUrl
-	cfg.NetworkID = MinerSetting.EthereumConfig.NetworkID
+	config.InitEthConf(MinerSetting.EthereumConfig.NetworkID,
+		MinerSetting.EthereumConfig.EthApiUrl,
+		MinerSetting.EthereumConfig.Token.String(),
+		MinerSetting.EthereumConfig.MicroPaySys.String(),
+		nil)
 }
 
 func InitMinerNode(auth, port string, networkid int) {
