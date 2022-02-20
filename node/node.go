@@ -349,7 +349,7 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			_ = conn.SetDeadline(time.Now().Add(time.Second * 3))
+			_ = conn.SetDeadline(time.Now().Add(time.Second * 10))
 		}).Start()
 	}
 }
@@ -419,7 +419,7 @@ func (n *Node) newWorker(conn net.Conn) {
 		buffer := make([]byte, peerMaxPacketSize)
 		for {
 			no, err := cConn.Read(buffer)
-			if err != nil || no == 0 {
+			if no == 0 {
 				nodeLog.Warning("read from client failed", err, no)
 				return
 			}
@@ -429,20 +429,20 @@ func (n *Node) newWorker(conn net.Conn) {
 				return
 			}
 		}
-	}, func(err interface{}) {
-		_ = tgtConn.Close()
-	}).Start()
+	}, nil).Start()
 	buffer := make([]byte, peerMaxPacketSize)
 	for {
 		no, err := tgtConn.Read(buffer)
 		if no == 0 {
 			nodeLog.Warning("Target->Proxy read err:", err)
-			_ = tgtConn.SetDeadline(time.Now().Add(time.Second * 3))
+			_ = tgtConn.SetDeadline(time.Now().Add(time.Second * 10))
 			return
 		}
+
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
-			panic(fmt.Errorf("Proxy->Client write err:%s", err))
+			nodeLog.Warning("Proxy->Client write  err:", err)
+			return
 		}
 	}
 }
