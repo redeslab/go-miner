@@ -423,11 +423,11 @@ func (n *Node) newWorker(conn net.Conn) {
 			if err != nil && no == 0 {
 				panic(fmt.Errorf("Client->Proxy read err:%s", err))
 			}
-			_, err = tgtConn.Write(buffer[:no])
+			wno, err := tgtConn.Write(buffer[:no])
 			if err != nil {
 				panic(fmt.Errorf("Proxy->Target write err:%s", err))
 			}
-			nodeLog.Debug("write to target:", no)
+			nodeLog.Debug("write to target:", no, wno)
 		}
 	}, func(err interface{}) {
 		if err != nil {
