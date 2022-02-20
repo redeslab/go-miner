@@ -349,8 +349,7 @@ func (n *Node) Mining(sig chan struct{}) {
 		com.NewThread(func(sig chan struct{}) {
 			n.newWorker(conn)
 		}, func(err interface{}) {
-			nodeLog.Warning("Thread for proxy service exit:", conn.RemoteAddr().String(), err)
-			_ = conn.Close()
+			_ = conn.SetDeadline(time.Now().Add(time.Second * 3))
 		}).Start()
 	}
 }
@@ -358,7 +357,7 @@ func (n *Node) Mining(sig chan struct{}) {
 func (n *Node) Stop() {
 	_ = n.srvConn.Close()
 	if n.poolConn != nil {
-		n.poolConn.Close()
+		_ = n.poolConn.Close()
 	}
 
 	_ = n.database.Close()
@@ -422,14 +421,13 @@ func (n *Node) newWorker(conn net.Conn) {
 			no, err := cConn.Read(buffer)
 			if err != nil || no == 0 {
 				nodeLog.Warning("read from client failed", err, no)
-				panic(fmt.Errorf("Client->Proxy read err:%s", err))
+				return
 			}
 			_, err = tgtConn.Write(buffer[:no])
 			if err != nil {
 				nodeLog.Warning("write to target failed", err)
-				panic(fmt.Errorf("Proxy->Target write err:%s", err))
+				return
 			}
-			//nodeLog.Debug("[bid=", b.BID, "] write to target:", no, wno)
 		}
 	}, func(err interface{}) {
 		_ = tgtConn.Close()
@@ -437,8 +435,10 @@ func (n *Node) newWorker(conn net.Conn) {
 	buffer := make([]byte, peerMaxPacketSize)
 	for {
 		no, err := tgtConn.Read(buffer)
-		if err != nil && no == 0 {
-			panic(fmt.Errorf("Target->Proxy read err:%s", err))
+		if no == 0 {
+			nodeLog.Warning("Target->Proxy read err:", err)
+			_ = tgtConn.SetDeadline(time.Now().Add(time.Second * 3))
+			return
 		}
 		_, err = cConn.Write(buffer[:no])
 		if err != nil {
