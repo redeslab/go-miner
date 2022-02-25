@@ -476,7 +476,7 @@ func (n *Node) dialPoolConn() (*net.TCPConn, error) {
 func (n *Node) SyncMicro(user common.Address) (tx *microchain.DBMicroTx, find bool, err error) {
 	conn, err := n.dialPoolConn()
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 
 	defer conn.Close()
