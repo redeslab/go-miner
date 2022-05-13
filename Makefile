@@ -43,7 +43,7 @@ mac:
 arm:
 	GOOS=linux GOARM=7 GOARCH=arm go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).arm
 lnx:
-	GOOS=linux go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).lnx
+	GOOS=linux GOARCH=amd64 go build -ldflags '-w -s' -o $(BINDIR)/$(NAME).lnx
 
 clean:
 	rm $(BINDIR)/$(NAME)

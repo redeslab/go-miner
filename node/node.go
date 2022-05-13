@@ -464,9 +464,10 @@ func (n *Node) ShowUserBucket(user string) *Bucket {
 
 func (n *Node) dialPoolConn() (*net.TCPConn, error) {
 	raddr := &net.TCPAddr{IP: net.ParseIP(string(n.poolNetAddr)), Port: com.SyncPort}
-
+	fmt.Println("------->", raddr.String())
 	conn, err := net.DialTCP("tcp", nil, raddr)
 	if err != nil {
+		fmt.Println("------>dial tcp failed", err)
 		return nil, err
 	}
 
